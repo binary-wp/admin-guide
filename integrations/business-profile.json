@@ -1,0 +1,9 @@
+{
+	"slug": "business-profile",
+	"name": "Business Profile",
+	"prefix": "bpfwp",
+	"requires": { "plugin": "business-profile/business-profile.php" },
+	"settings_url": "admin.php?page=bpfwp-settings",
+	"docs_url": "",
+	"placeholders": {}
+}

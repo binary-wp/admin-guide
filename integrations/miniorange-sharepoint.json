@@ -1,0 +1,21 @@
+{
+	"slug": "miniorange-sharepoint",
+	"name": "miniOrange SharePoint",
+	"prefix": "mo_sharepoint",
+	"requires": {
+		"any": [
+			{ "plugin": "embed-sharepoint-onedrive-documents/embed-sharepoint-onedrive-documents.php" },
+			{ "plugin": "embed-sharepoint-onedrive-documents/mo_sharepoint_onedrive_embed.php" }
+		]
+	},
+	"settings_url": "admin.php?page=mo_sharepoint_onedrive_embed",
+	"docs_url": "",
+	"external": [
+		{
+			"service": "SharePoint / OneDrive",
+			"description": "Document embedding & sync from Microsoft cloud",
+			"check": "mo_sharepoint_connection"
+		}
+	],
+	"placeholders": {}
+}

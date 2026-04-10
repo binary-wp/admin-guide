@@ -1,0 +1,17 @@
+{
+	"slug": "woocommerce-subscriptions",
+	"name": "WooCommerce Subscriptions",
+	"prefix": "woo_subscriptions",
+	"requires": { "plugin": "woocommerce-subscriptions/woocommerce-subscriptions.php" },
+	"settings_url": "admin.php?page=wc-settings&tab=subscriptions",
+	"docs_url": "https://woocommerce.com/document/subscriptions/",
+	"tab_templates": [
+		{ "slug": "woocommerce-subscriptions", "label": "Subscriptions" }
+	],
+	"placeholders": {
+		"{{woo_subscriptions_products_table}}": {
+			"callback": "guide_render_woo_subscriptions_products_table",
+			"description": "Subscription products grouped by type"
+		}
+	}
+}

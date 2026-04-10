@@ -1,0 +1,36 @@
+{
+	"slug": "woocommerce",
+	"name": "WooCommerce",
+	"prefix": "woo",
+	"requires": { "plugin": "woocommerce/woocommerce.php" },
+	"settings_url": "admin.php?page=wc-settings",
+	"docs_url": "https://woocommerce.com/documentation/",
+	"external": [
+		{
+			"service": "Payment Gateway",
+			"description": "Active payment processing",
+			"check": "woo_payment_gateway"
+		}
+	],
+	"tab_templates": [
+		{ "slug": "woocommerce", "label": "WooCommerce Overview" }
+	],
+	"placeholders": {
+		"{{woo_payment_methods_table}}": {
+			"callback": "guide_render_woo_payment_methods_table",
+			"description": "Active payment gateways"
+		},
+		"{{woo_emails_settings_link}}": {
+			"type": "settings_link",
+			"url": "admin.php?page=wc-settings&tab=email",
+			"label": "WooCommerce Emails",
+			"description": "Link to WooCommerce email settings"
+		},
+		"{{woo_checkout_settings_link}}": {
+			"type": "settings_link",
+			"url": "admin.php?page=wc-settings&tab=checkout",
+			"label": "WooCommerce Checkout",
+			"description": "Link to WooCommerce checkout/payment settings"
+		}
+	}
+}

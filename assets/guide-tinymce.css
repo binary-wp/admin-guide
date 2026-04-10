@@ -1,0 +1,30 @@
+/**
+ * Guide Builder — TinyMCE Content Styles.
+ * Loaded inside the TinyMCE iframe via content_css.
+ */
+
+.guide-ph {
+	display: inline-block;
+	background: #2271b1;
+	color: #fff;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 1;
+	padding: 4px 10px;
+	border-radius: 12px;
+	cursor: default;
+	vertical-align: baseline;
+	white-space: nowrap;
+}
+
+.guide-ph:hover {
+	background: #135e96;
+}
+
+/* Selected state (TinyMCE adds this). */
+.guide-ph.mce-match-marker,
+.guide-ph[data-mce-selected] {
+	outline: 2px solid #d63638;
+	outline-offset: 1px;
+}

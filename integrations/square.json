@@ -1,0 +1,21 @@
+{
+	"slug": "square",
+	"name": "Square",
+	"prefix": "square",
+	"requires": { "plugin": "woocommerce-square/woocommerce-square.php" },
+	"settings_url": "admin.php?page=wc-settings&tab=square",
+	"docs_url": "",
+	"external": [
+		{
+			"service": "Payments",
+			"description": "Payment processing via Square",
+			"check": "square_connection"
+		},
+		{
+			"service": "Product Sync",
+			"description": "POS & inventory synchronization",
+			"check": "square_sync"
+		}
+	],
+	"placeholders": {}
+}

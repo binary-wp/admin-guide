@@ -1,0 +1,12 @@
+{
+	"slug": "astra",
+	"name": "Astra",
+	"prefix": "astra",
+	"requires": { "theme": "astra" },
+	"settings_url": "customize.php",
+	"docs_url": "https://wpastra.com/docs/",
+	"tab_templates": [
+		{ "slug": "astra-header-footer", "label": "Header & Footer" }
+	],
+	"placeholders": {}
+}

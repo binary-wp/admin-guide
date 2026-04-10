@@ -1,0 +1,16 @@
+{
+	"slug": "wp-mail-smtp",
+	"name": "WP Mail SMTP",
+	"prefix": "wp_mail_smtp",
+	"requires": { "plugin": "wp-mail-smtp/wp_mail_smtp.php" },
+	"settings_url": "admin.php?page=wp-mail-smtp",
+	"docs_url": "",
+	"external": [
+		{
+			"service": "Email Delivery",
+			"description": "Transactional email via configured mailer",
+			"check": "wp_mail_smtp_mailer"
+		}
+	],
+	"placeholders": {}
+}

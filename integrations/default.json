@@ -1,0 +1,72 @@
+{
+	"slug": "wordpress",
+	"name": "WordPress",
+	"prefix": "wp",
+	"requires": {},
+	"settings_url": "",
+	"system_tabs": [
+		{ "slug": "general", "label": "General" },
+		{ "slug": "other", "label": "Other" }
+	],
+	"tab_sources": {
+		"post_types": true,
+		"taxonomies": true
+	},
+	"docs_url": "https://wordpress.org/documentation/",
+	"placeholders": {
+		"{{wp_content_types_table}}": {
+			"callback": "guide_render_wp_content_types_table",
+			"description": "Content Types and Special Content Types tables with admin links"
+		},
+		"{{wp_other_content_table}}": {
+			"callback": "guide_render_wp_other_content_table",
+			"description": "Content types without a dedicated guide tab"
+		},
+		"{{wp_post_categories_list}}": {
+			"callback": "guide_render_wp_post_categories_list",
+			"description": "Ordered list of post categories with admin links"
+		},
+		"{{wp_posts_page_link}}": {
+			"callback": "guide_render_wp_posts_page_link",
+			"description": "Link to the blog page (from Reading settings)"
+		},
+		"{{wp_editors_list}}": {
+			"callback": "guide_render_wp_editors_list",
+			"description": "Detected editors (Classic/Block/Elementor) with linked type lists"
+		},
+		"{{wp_editor_name_text}}": {
+			"callback": "guide_render_wp_editor_name_text",
+			"description": "Inline editor name: Classic Editor, Block Editor, or both"
+		},
+		"{{wp_allowed_editors_text}}": {
+			"callback": "guide_render_wp_allowed_editors_text",
+			"description": "Editor name(s) with documentation links"
+		},
+		"{{wp_settings_dashboards_table}}": {
+			"callback": "guide_render_wp_settings_dashboards_table",
+			"description": "Active plugin settings pages"
+		},
+		"{{wp_external_services_table}}": {
+			"callback": "guide_render_wp_external_services_table",
+			"description": "Detected third-party service integrations"
+		},
+		"{{wp_menus_link}}": {
+			"type": "settings_link",
+			"url": "nav-menus.php",
+			"label": "Appearance > Menus",
+			"description": "Link to WordPress menu editor"
+		},
+		"{{wp_widgets_link}}": {
+			"type": "settings_link",
+			"url": "widgets.php",
+			"label": "Appearance > Widgets",
+			"description": "Link to WordPress widget editor"
+		},
+		"{{wp_customizer_link}}": {
+			"type": "settings_link",
+			"url": "customize.php",
+			"label": "Customizer",
+			"description": "Link to WordPress Customizer"
+		}
+	}
+}

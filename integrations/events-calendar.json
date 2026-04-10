@@ -1,0 +1,14 @@
+{
+	"slug": "the-events-calendar",
+	"name": "The Events Calendar",
+	"prefix": "tec",
+	"requires": { "plugin": "the-events-calendar/the-events-calendar.php" },
+	"settings_url": "edit.php?page=tec-events-settings&post_type=tribe_events",
+	"docs_url": "https://theeventscalendar.com/knowledgebase/",
+	"placeholders": {
+		"{{tec_categories_list}}": {
+			"callback": "guide_render_tec_categories_list",
+			"description": "Event category terms with admin links"
+		}
+	}
+}

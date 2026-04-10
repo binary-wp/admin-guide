@@ -1,0 +1,9 @@
+{
+	"slug": "elementor",
+	"name": "Elementor",
+	"prefix": "elementor",
+	"requires": { "plugin": "elementor/elementor.php" },
+	"settings_url": "admin.php?page=elementor",
+	"docs_url": "https://elementor.com/help/",
+	"placeholders": {}
+}

@@ -1,0 +1,18 @@
+{
+	"slug": "woocommerce-memberships",
+	"name": "WooCommerce Memberships",
+	"prefix": "woo_memberships",
+	"requires": { "plugin": "woocommerce-memberships/woocommerce-memberships.php" },
+	"settings_url": "admin.php?page=wc-settings&tab=memberships",
+	"docs_url": "https://woocommerce.com/document/woocommerce-memberships/",
+	"tab_templates": [
+		{ "slug": "woocommerce-memberships", "label": "Memberships" },
+		{ "slug": "woocommerce-memberships-subscriptions", "label": "Memberships & Subscriptions (combo)" }
+	],
+	"placeholders": {
+		"{{woo_memberships_plans_section}}": {
+			"callback": "guide_render_woo_memberships_plans_section",
+			"description": "Membership plans with restrictions and linked products"
+		}
+	}
+}

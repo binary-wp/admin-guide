@@ -1,0 +1,9 @@
+{
+	"slug": "publishpress-future",
+	"name": "PublishPress Future",
+	"prefix": "pp_future",
+	"requires": { "plugin": "post-expirator/post-expirator.php" },
+	"settings_url": "admin.php?page=publishpress-future",
+	"docs_url": "https://publishpress.com/future/",
+	"placeholders": {}
+}

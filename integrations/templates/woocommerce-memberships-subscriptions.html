@@ -1,0 +1,51 @@
+<h1>Memberships &amp; Subscriptions</h1>
+
+<p>This guide covers the combined setup of <strong>WooCommerce Memberships</strong> and <strong>WooCommerce Subscriptions</strong> — the recommended configuration for managing paid memberships with recurring billing. Both require <strong>WooCommerce</strong> as a base.</p>
+
+<h2>How It Works Together</h2>
+
+<p>A <strong>Subscription Product</strong> handles the payment — it charges the member on a recurring basis (monthly, annually, etc.). A <strong>Membership Plan</strong> controls what the member gets access to — restricted content, member-only pages, discounts.</p>
+
+<p>When a customer purchases a subscription product that is linked to a membership plan, the membership is <strong>automatically created</strong>. The membership lifecycle follows the subscription:</p>
+
+<ul>
+<li><strong>Active subscription</strong> → active membership</li>
+<li><strong>Subscription renewed</strong> → membership extended</li>
+<li><strong>Subscription cancelled/expired</strong> → membership paused or ended</li>
+</ul>
+
+<p>Some subscription products are linked to a membership plan (core membership tiers). Others are standalone add-ons (e.g., additional services or donations) that don't grant membership access.</p>
+
+<h2>Membership Plans</h2>
+
+{{woo_memberships_plans_section}}
+
+<h2>Subscription Products</h2>
+
+{{woo_subscriptions_products_table}}
+
+<h2>Emails</h2>
+
+<p>Transactional emails are configured at {{woo_emails_settings_link}}. Both Memberships and Subscriptions add their own email notifications (membership granted, subscription renewal reminder, etc.).</p>
+
+<h2>Payment Methods</h2>
+
+<p>Active payment gateways at {{woo_checkout_settings_link}}:</p>
+
+{{woo_payment_methods_table}}
+
+<h2>Settings</h2>
+
+<ul>
+<li>{{woo_settings_link}} — general store settings</li>
+<li>Memberships tab — membership plans, content restrictions, members area</li>
+<li>Subscriptions tab — renewal handling, subscriber permissions</li>
+</ul>
+
+<h2>Documentation</h2>
+
+<ul>
+<li><a href="https://woocommerce.com/document/woocommerce-memberships/" target="_blank">WooCommerce Memberships →</a></li>
+<li><a href="https://woocommerce.com/document/subscriptions/" target="_blank">WooCommerce Subscriptions →</a></li>
+<li><a href="https://woocommerce.com/document/woocommerce-memberships-subscriptions-integration/" target="_blank">Memberships + Subscriptions Integration →</a></li>
+</ul>

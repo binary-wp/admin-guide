@@ -1,0 +1,9 @@
+{
+	"slug": "searchwp",
+	"name": "SearchWP",
+	"prefix": "searchwp",
+	"requires": { "plugin": "searchwp/index.php" },
+	"settings_url": "admin.php?page=searchwp-settings",
+	"docs_url": "https://searchwp.com/documentation/",
+	"placeholders": {}
+}
