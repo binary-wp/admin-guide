@@ -68,7 +68,10 @@ class Admin {
 			return; // No parent configured — skip builder menu registration for now.
 		}
 
-		$label = isset( $this->context->menu_defaults['builder_label'] ) ? $this->context->menu_defaults['builder_label'] : 'Guide Builder';
+		// Label default is translatable; hosts can still override via menu_defaults.
+		$label = isset( $this->context->menu_defaults['builder_label'] )
+			? $this->context->menu_defaults['builder_label']
+			: __( 'Guide Builder', 'binary-wp-admin-guide' );
 
 		add_submenu_page(
 			$parent,
@@ -132,33 +135,35 @@ class Admin {
 		$import_btn_id    = $this->context->page_slug( 'import-btn' );
 		$import_cancel_id = $this->context->page_slug( 'import-cancel' );
 
-		$builder_label = isset( $this->context->menu_defaults['builder_label'] ) ? $this->context->menu_defaults['builder_label'] : 'Guide Builder';
+		$builder_label = isset( $this->context->menu_defaults['builder_label'] )
+			? $this->context->menu_defaults['builder_label']
+			: __( 'Guide Builder', 'binary-wp-admin-guide' );
 		?>
 		<div class="wrap">
 			<h1 style="display:flex;align-items:center;gap:10px">
 				<?php echo esc_html( $builder_label ); ?>
-				<a href="<?php echo esc_url( $export_url ); ?>" class="page-title-action">Export</a>
-				<button type="button" class="page-title-action" id="<?php echo esc_attr( $import_btn_id ); ?>">Import</button>
+				<a href="<?php echo esc_url( $export_url ); ?>" class="page-title-action"><?php esc_html_e( 'Export', 'binary-wp-admin-guide' ); ?></a>
+				<button type="button" class="page-title-action" id="<?php echo esc_attr( $import_btn_id ); ?>"><?php esc_html_e( 'Import', 'binary-wp-admin-guide' ); ?></button>
 			</h1>
 
 			<form id="<?php echo esc_attr( $import_form_id ); ?>" method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:none;margin:10px 0;padding:12px;background:#fff;border:1px solid #c3c4c7;max-width:600px">
 				<input type="hidden" name="action" value="<?php echo esc_attr( $import_action ); ?>">
 				<?php wp_nonce_field( $import_nonce ); ?>
-				<p style="margin-top:0"><strong>Import guide bundle</strong> — this will replace all current tabs and templates.</p>
+				<p style="margin-top:0"><strong><?php esc_html_e( 'Import guide bundle', 'binary-wp-admin-guide' ); ?></strong> — <?php esc_html_e( 'this will replace all current tabs and templates.', 'binary-wp-admin-guide' ); ?></p>
 				<p>
 					<input type="file" name="bundle" accept="application/json,.json" required>
 				</p>
 				<p>
-					<button type="submit" class="button button-primary">Import &amp; Replace</button>
-					<button type="button" class="button" id="<?php echo esc_attr( $import_cancel_id ); ?>">Cancel</button>
+					<button type="submit" class="button button-primary"><?php esc_html_e( 'Import &amp; Replace', 'binary-wp-admin-guide' ); ?></button>
+					<button type="button" class="button" id="<?php echo esc_attr( $import_cancel_id ); ?>"><?php esc_html_e( 'Cancel', 'binary-wp-admin-guide' ); ?></button>
 				</p>
 			</form>
 
 			<?php if ( isset( $_GET['updated'] ) ) : ?>
-				<div class="notice notice-success is-dismissible"><p>Guide updated and regenerated.</p></div>
+				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Guide updated and regenerated.', 'binary-wp-admin-guide' ); ?></p></div>
 			<?php endif; ?>
 			<?php if ( isset( $_GET['imported'] ) ) : ?>
-				<div class="notice notice-success is-dismissible"><p>Guide bundle imported.</p></div>
+				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Guide bundle imported.', 'binary-wp-admin-guide' ); ?></p></div>
 			<?php endif; ?>
 			<?php if ( isset( $_GET['import_error'] ) ) : ?>
 				<div class="notice notice-error is-dismissible"><p><?php echo esc_html( wp_unslash( $_GET['import_error'] ) ); ?></p></div>
@@ -171,11 +176,11 @@ class Admin {
 					<div class="guide-builder-main">
 
 						<h2 style="display:flex;align-items:center;gap:15px">
-							Guides
-							<button type="button" id="guide-builder-save-all" class="button button-primary" style="display:none">Save Changes</button>
+							<?php esc_html_e( 'Guides', 'binary-wp-admin-guide' ); ?>
+							<button type="button" id="guide-builder-save-all" class="button button-primary" style="display:none"><?php esc_html_e( 'Save Changes', 'binary-wp-admin-guide' ); ?></button>
 							<span id="guide-builder-save-status" style="font-size:13px;font-weight:normal;color:#00a32a"></span>
 						</h2>
-						<p class="description">Drag to reorder. Click to expand and edit content.</p>
+						<p class="description"><?php esc_html_e( 'Drag to reorder. Click to expand and edit content.', 'binary-wp-admin-guide' ); ?></p>
 
 						<ul id="guide-tabs-sortable" class="guide-tabs-list">
 							<?php foreach ( $tabs as $tab ) :
@@ -192,20 +197,20 @@ class Admin {
 										<span class="guide-tab-label"><?php echo esc_html( $tab['label'] ); ?></span>
 										<span class="guide-tab-source guide-tab-source--<?php echo esc_attr( $tab['source'] ); ?>"><?php echo esc_html( $this->resolve_source_label( $tab ) ); ?></span>
 										<span class="guide-tab-toggle dashicons dashicons-arrow-right-alt2"></span>
-										<button type="button" class="guide-tab-remove button-link" data-slug="<?php echo esc_attr( $tab['slug'] ); ?>" title="Remove">
+										<button type="button" class="guide-tab-remove button-link" data-slug="<?php echo esc_attr( $tab['slug'] ); ?>" title="<?php esc_attr_e( 'Remove', 'binary-wp-admin-guide' ); ?>">
 											<span class="dashicons dashicons-no-alt"></span>
 										</button>
 									</div>
 									<div class="guide-tab-editor" style="display:none">
 										<div class="guide-tab-meta">
-											<label>Label: <input type="text" class="guide-tab-meta-label regular-text" value="<?php echo esc_attr( $tab['label'] ); ?>"></label>
-											<label>Slug: <input type="text" class="guide-tab-meta-slug" value="<?php echo esc_attr( $tab['slug'] ); ?>" style="width:160px"<?php echo $tab['source'] !== 'custom' ? ' readonly' : ''; ?>></label>
+											<label><?php esc_html_e( 'Label:', 'binary-wp-admin-guide' ); ?> <input type="text" class="guide-tab-meta-label regular-text" value="<?php echo esc_attr( $tab['label'] ); ?>"></label>
+											<label><?php esc_html_e( 'Slug:', 'binary-wp-admin-guide' ); ?> <input type="text" class="guide-tab-meta-slug" value="<?php echo esc_attr( $tab['slug'] ); ?>" style="width:160px"<?php echo $tab['source'] !== 'custom' ? ' readonly' : ''; ?>></label>
 										</div>
 										<div class="guide-tab-editor-area">
 											<textarea class="guide-tab-textarea" id="guide-editor-<?php echo esc_attr( $tab['slug'] ); ?>"><?php echo esc_textarea( $content ); ?></textarea>
 										</div>
 										<div class="guide-tab-actions">
-											<button type="button" class="button button-primary guide-tab-save" data-slug="<?php echo esc_attr( $tab['slug'] ); ?>">Save</button>
+											<button type="button" class="button button-primary guide-tab-save" data-slug="<?php echo esc_attr( $tab['slug'] ); ?>"><?php esc_html_e( 'Save', 'binary-wp-admin-guide' ); ?></button>
 											<span class="guide-tab-save-status"></span>
 										</div>
 									</div>
@@ -215,20 +220,20 @@ class Admin {
 
 						<hr>
 
-						<h2>Add Guide</h2>
+						<h2><?php esc_html_e( 'Add Guide', 'binary-wp-admin-guide' ); ?></h2>
 						<fieldset class="guide-add-fieldset">
-							<legend>System Guide</legend>
+							<legend><?php esc_html_e( 'System Guide', 'binary-wp-admin-guide' ); ?></legend>
 							<div class="guide-add-inline">
-								<select id="guide-add-system"><option value="">— Select source —</option></select>
-								<button type="button" id="guide-add-system-btn" class="button">Add</button>
+								<select id="guide-add-system"><option value=""><?php esc_html_e( '— Select source —', 'binary-wp-admin-guide' ); ?></option></select>
+								<button type="button" id="guide-add-system-btn" class="button"><?php esc_html_e( 'Add', 'binary-wp-admin-guide' ); ?></button>
 							</div>
 						</fieldset>
 						<fieldset class="guide-add-fieldset">
-							<legend>Custom Guide</legend>
+							<legend><?php esc_html_e( 'Custom Guide', 'binary-wp-admin-guide' ); ?></legend>
 							<div class="guide-add-inline">
-								<input type="text" id="guide-add-custom-slug" placeholder="slug" style="width:120px">
-								<input type="text" id="guide-add-custom-label" placeholder="Label" style="width:180px">
-								<button type="button" id="guide-add-custom-btn" class="button">Add</button>
+								<input type="text" id="guide-add-custom-slug" placeholder="<?php esc_attr_e( 'slug', 'binary-wp-admin-guide' ); ?>" style="width:120px">
+								<input type="text" id="guide-add-custom-label" placeholder="<?php esc_attr_e( 'Label', 'binary-wp-admin-guide' ); ?>" style="width:180px">
+								<button type="button" id="guide-add-custom-btn" class="button"><?php esc_html_e( 'Add', 'binary-wp-admin-guide' ); ?></button>
 							</div>
 						</fieldset>
 
@@ -236,8 +241,8 @@ class Admin {
 
 					<!-- Sidebar: Placeholder Palette -->
 					<div class="guide-builder-sidebar" id="guide-placeholder-palette">
-						<h3>Placeholders</h3>
-						<p class="description">Click to insert at cursor, or drag into the editor.</p>
+						<h3><?php esc_html_e( 'Placeholders', 'binary-wp-admin-guide' ); ?></h3>
+						<p class="description"><?php esc_html_e( 'Click to insert at cursor, or drag into the editor.', 'binary-wp-admin-guide' ); ?></p>
 						<div id="guide-placeholder-list"></div>
 					</div>
 
@@ -262,7 +267,7 @@ class Admin {
 	private function verify_ajax() {
 		check_ajax_referer( $this->context->nonce_action(), 'nonce' );
 		if ( ! current_user_can( $this->context->capability ) ) {
-			wp_send_json_error( 'Permission denied.' );
+			wp_send_json_error( __( 'Permission denied.', 'binary-wp-admin-guide' ) );
 		}
 	}
 
@@ -282,10 +287,10 @@ class Admin {
 		$label  = isset( $_POST['label'] ) ? sanitize_text_field( $_POST['label'] ) : '';
 		$source = isset( $_POST['source'] ) ? sanitize_key( $_POST['source'] ) : 'custom';
 
-		if ( ! $slug || ! $label ) wp_send_json_error( 'Slug and label are required.' );
+		if ( ! $slug || ! $label ) wp_send_json_error( __( 'Slug and label are required.', 'binary-wp-admin-guide' ) );
 
 		$result = $this->config->add_tab( $slug, $label, $source );
-		if ( ! $result ) wp_send_json_error( 'Tab already exists.' );
+		if ( ! $result ) wp_send_json_error( __( 'Tab already exists.', 'binary-wp-admin-guide' ) );
 
 		$this->generator->generate();
 		wp_send_json_success( array( 'slug' => $slug, 'label' => $label, 'source' => $source ) );
@@ -295,7 +300,7 @@ class Admin {
 		$this->verify_ajax();
 
 		$slug = isset( $_POST['slug'] ) ? sanitize_key( $_POST['slug'] ) : '';
-		if ( ! $slug ) wp_send_json_error( 'Slug is required.' );
+		if ( ! $slug ) wp_send_json_error( __( 'Slug is required.', 'binary-wp-admin-guide' ) );
 
 		$this->config->remove_tab( $slug );
 		$this->generator->generate();
@@ -332,7 +337,7 @@ class Admin {
 		$new_label = isset( $_POST['new_label'] ) ? sanitize_text_field( wp_unslash( $_POST['new_label'] ) ) : '';
 		$content   = isset( $_POST['content'] ) ? wp_kses_post( wp_unslash( $_POST['content'] ) ) : '';
 
-		if ( ! $old_slug ) wp_send_json_error( 'Slug is required.' );
+		if ( ! $old_slug ) wp_send_json_error( __( 'Slug is required.', 'binary-wp-admin-guide' ) );
 
 		// Convert pill spans back to plain {{tokens}}.
 		$content = preg_replace(
@@ -361,7 +366,7 @@ class Admin {
 	 */
 	public function handle_export() {
 		if ( ! current_user_can( $this->context->capability ) ) {
-			wp_die( 'Permission denied.', '', array( 'response' => 403 ) );
+			wp_die( esc_html__( 'Permission denied.', 'binary-wp-admin-guide' ), '', array( 'response' => 403 ) );
 		}
 		check_admin_referer( $this->context->nonce_action( 'export' ) );
 
@@ -381,20 +386,20 @@ class Admin {
 	 */
 	public function handle_import() {
 		if ( ! current_user_can( $this->context->capability ) ) {
-			wp_die( 'Permission denied.', '', array( 'response' => 403 ) );
+			wp_die( esc_html__( 'Permission denied.', 'binary-wp-admin-guide' ), '', array( 'response' => 403 ) );
 		}
 		check_admin_referer( $this->context->nonce_action( 'import' ) );
 
 		$redirect_base = admin_url( 'admin.php?page=' . $this->page_slug );
 
 		if ( empty( $_FILES['bundle'] ) || ! empty( $_FILES['bundle']['error'] ) ) {
-			wp_safe_redirect( add_query_arg( 'import_error', rawurlencode( 'No file uploaded.' ), $redirect_base ) );
+			wp_safe_redirect( add_query_arg( 'import_error', rawurlencode( __( 'No file uploaded.', 'binary-wp-admin-guide' ) ), $redirect_base ) );
 			exit;
 		}
 
 		$tmp_name = isset( $_FILES['bundle']['tmp_name'] ) ? $_FILES['bundle']['tmp_name'] : '';
 		if ( ! $tmp_name || ! is_uploaded_file( $tmp_name ) ) {
-			wp_safe_redirect( add_query_arg( 'import_error', rawurlencode( 'Invalid upload.' ), $redirect_base ) );
+			wp_safe_redirect( add_query_arg( 'import_error', rawurlencode( __( 'Invalid upload.', 'binary-wp-admin-guide' ) ), $redirect_base ) );
 			exit;
 		}
 
@@ -402,7 +407,7 @@ class Admin {
 		$bundle = json_decode( $json, true );
 
 		if ( ! is_array( $bundle ) ) {
-			wp_safe_redirect( add_query_arg( 'import_error', rawurlencode( 'File is not valid JSON.' ), $redirect_base ) );
+			wp_safe_redirect( add_query_arg( 'import_error', rawurlencode( __( 'File is not valid JSON.', 'binary-wp-admin-guide' ) ), $redirect_base ) );
 			exit;
 		}
 
@@ -447,16 +452,16 @@ class Admin {
 		$slug   = $tab['slug'];
 
 		if ( $source === 'custom' ) {
-			return 'Custom';
+			return __( 'Custom', 'binary-wp-admin-guide' );
 		}
 		if ( $source === 'system' ) {
-			return 'System';
+			return __( 'System', 'binary-wp-admin-guide' );
 		}
 		if ( $source === 'post_type' ) {
-			return 'Post Type';
+			return __( 'Post Type', 'binary-wp-admin-guide' );
 		}
 		if ( $source === 'taxonomy' ) {
-			return 'Taxonomy';
+			return __( 'Taxonomy', 'binary-wp-admin-guide' );
 		}
 		if ( $source === 'platform' ) {
 			// Find integration name by matching tab slug against tab_templates.

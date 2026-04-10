@@ -1,0 +1,342 @@
+# Translation template for Admin Guide.
+# Copyright (C) 2026 BinaryWP
+# This file is distributed under the same license as the Admin Guide package.
+# BinaryWP <hello@binarywp.dev>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Admin Guide 0.2.0\n"
+"Report-Msgid-Bugs-To: https://github.com/binary-wp/admin-guide/issues\n"
+"POT-Creation-Date: 2026-04-10 17:50+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/Integrations.php:242 src/Admin.php:458
+msgid "System"
+msgstr ""
+
+#: src/Integrations.php:259
+msgid "Post Types"
+msgstr ""
+
+#: src/Integrations.php:274 integrations/functions/default.php:125
+#: integrations/functions/default.php:180
+msgid "Taxonomies"
+msgstr ""
+
+#: src/Integrations.php:291
+msgid "Theme"
+msgstr ""
+
+#: src/Config.php:269
+msgid "Invalid bundle: missing version."
+msgstr ""
+
+#. translators: 1: bundle version number, 2: expected version number
+#: src/Config.php:276
+#, php-format
+msgid "Unsupported bundle version %1$d (expected %2$d)."
+msgstr ""
+
+#: src/Config.php:283
+msgid "Invalid bundle: missing tabs."
+msgstr ""
+
+#: src/Admin.php:74 src/Admin.php:140
+msgid "Guide Builder"
+msgstr ""
+
+#: src/Admin.php:145
+msgid "Export"
+msgstr ""
+
+#: src/Admin.php:146
+msgid "Import"
+msgstr ""
+
+#: src/Admin.php:152
+msgid "Import guide bundle"
+msgstr ""
+
+#: src/Admin.php:152
+msgid "this will replace all current tabs and templates."
+msgstr ""
+
+#: src/Admin.php:157
+msgid "Import &amp; Replace"
+msgstr ""
+
+#: src/Admin.php:158
+msgid "Cancel"
+msgstr ""
+
+#: src/Admin.php:163
+msgid "Guide updated and regenerated."
+msgstr ""
+
+#: src/Admin.php:166
+msgid "Guide bundle imported."
+msgstr ""
+
+#: src/Admin.php:179
+msgid "Guides"
+msgstr ""
+
+#: src/Admin.php:180
+msgid "Save Changes"
+msgstr ""
+
+#: src/Admin.php:183
+msgid "Drag to reorder. Click to expand and edit content."
+msgstr ""
+
+#: src/Admin.php:200
+msgid "Remove"
+msgstr ""
+
+#: src/Admin.php:206
+msgid "Label:"
+msgstr ""
+
+#: src/Admin.php:207
+msgid "Slug:"
+msgstr ""
+
+#: src/Admin.php:213
+msgid "Save"
+msgstr ""
+
+#: src/Admin.php:223
+msgid "Add Guide"
+msgstr ""
+
+#: src/Admin.php:225
+msgid "System Guide"
+msgstr ""
+
+#: src/Admin.php:227
+msgid "— Select source —"
+msgstr ""
+
+#: src/Admin.php:228 src/Admin.php:236
+msgid "Add"
+msgstr ""
+
+#: src/Admin.php:232
+msgid "Custom Guide"
+msgstr ""
+
+#: src/Admin.php:234
+msgid "slug"
+msgstr ""
+
+#: src/Admin.php:235
+msgid "Label"
+msgstr ""
+
+#: src/Admin.php:244
+msgid "Placeholders"
+msgstr ""
+
+#: src/Admin.php:245
+msgid "Click to insert at cursor, or drag into the editor."
+msgstr ""
+
+#: src/Admin.php:270 src/Admin.php:369 src/Admin.php:389
+msgid "Permission denied."
+msgstr ""
+
+#: src/Admin.php:290
+msgid "Slug and label are required."
+msgstr ""
+
+#: src/Admin.php:293
+msgid "Tab already exists."
+msgstr ""
+
+#: src/Admin.php:303 src/Admin.php:340
+msgid "Slug is required."
+msgstr ""
+
+#: src/Admin.php:396
+msgid "No file uploaded."
+msgstr ""
+
+#: src/Admin.php:402
+msgid "Invalid upload."
+msgstr ""
+
+#: src/Admin.php:410
+msgid "File is not valid JSON."
+msgstr ""
+
+#: src/Admin.php:455
+msgid "Custom"
+msgstr ""
+
+#: src/Admin.php:461
+msgid "Post Type"
+msgstr ""
+
+#: src/Admin.php:464
+msgid "Taxonomy"
+msgstr ""
+
+#: integrations/functions/default.php:110
+msgid "Content Types"
+msgstr ""
+
+#: integrations/functions/default.php:113
+msgid "Special Content Types"
+msgstr ""
+
+#: integrations/functions/default.php:124
+#: integrations/functions/default.php:179
+msgid "Content Type"
+msgstr ""
+
+#: integrations/functions/default.php:126
+msgid "User Guide"
+msgstr ""
+
+#: integrations/functions/default.php:127
+msgid "Registered by"
+msgstr ""
+
+#: integrations/functions/default.php:174
+msgid "All content types have dedicated guide tabs."
+msgstr ""
+
+#: integrations/functions/default.php:253
+#: integrations/functions/default.php:277
+#: integrations/functions/default.php:287
+msgid "Classic Editor"
+msgstr ""
+
+#: integrations/functions/default.php:254
+msgid "single rich-text area with formatting toolbar."
+msgstr ""
+
+#: integrations/functions/default.php:255
+#: integrations/functions/default.php:261
+#: integrations/functions/default.php:267
+msgid "Documentation"
+msgstr ""
+
+#: integrations/functions/default.php:256
+#: integrations/functions/default.php:262
+#: integrations/functions/default.php:268
+msgid "Used by:"
+msgstr ""
+
+#: integrations/functions/default.php:259
+#: integrations/functions/default.php:278
+#: integrations/functions/default.php:290
+msgid "Block Editor"
+msgstr ""
+
+#: integrations/functions/default.php:260
+msgid "block-based editor with drag & drop."
+msgstr ""
+
+#: integrations/functions/default.php:266
+msgid "visual page builder for complex layouts."
+msgstr ""
+
+#: integrations/functions/default.php:271
+msgid "No editors detected."
+msgstr ""
+
+#: integrations/functions/default.php:279
+msgid "or"
+msgstr ""
+
+#: integrations/functions/default.php:279
+msgid "WordPress Editor"
+msgstr ""
+
+#. translators: 1: first editor link, 2: second editor link
+#: integrations/functions/default.php:296
+#, php-format
+msgid "the %1$s or %2$s"
+msgstr ""
+
+#: integrations/functions/default.php:302
+#, php-format
+msgid "the %s"
+msgstr ""
+
+#: integrations/functions/default.php:304
+msgid "the WordPress Editor"
+msgstr ""
+
+#: integrations/functions/default.php:323
+msgid "No categories found."
+msgstr ""
+
+#: integrations/functions/default.php:341
+msgid "Store, payments, shipping, tax"
+msgstr ""
+
+#: integrations/functions/default.php:344
+msgid "Business info, opening hours, contact"
+msgstr ""
+
+#: integrations/functions/default.php:348
+msgid "No settings dashboards detected."
+msgstr ""
+
+#: integrations/functions/default.php:353
+msgid "Dashboard"
+msgstr ""
+
+#: integrations/functions/default.php:354
+msgid "Purpose"
+msgstr ""
+
+#: integrations/functions/default.php:355
+msgid "Link"
+msgstr ""
+
+#: integrations/functions/default.php:360
+msgid "Open"
+msgstr ""
+
+#: integrations/functions/default.php:369
+msgid "Integration registry not available."
+msgstr ""
+
+#: integrations/functions/default.php:375
+msgid "No external service integrations detected."
+msgstr ""
+
+#: integrations/functions/default.php:381
+msgid "Service"
+msgstr ""
+
+#: integrations/functions/default.php:382
+msgid "Connection"
+msgstr ""
+
+#: integrations/functions/default.php:383
+msgid "Status"
+msgstr ""
+
+#: integrations/functions/default.php:384
+#: integrations/functions/default.php:396
+#: integrations/functions/default.php:418
+msgid "Settings"
+msgstr ""
+
+#: integrations/functions/default.php:394
+msgid "Unknown"
+msgstr ""
+
+#: integrations/functions/default.php:415
+msgid "Checking…"
+msgstr ""

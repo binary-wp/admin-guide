@@ -239,7 +239,7 @@ class Integrations {
 						'disabled' => (int) in_array( $st['slug'], $existing, true ),
 					);
 				}
-				$groups[] = array( 'group' => 'System', 'items' => $items );
+				$groups[] = array( 'group' => __( 'System', 'binary-wp-admin-guide' ), 'items' => $items );
 			}
 
 			// Post types / taxonomies (from default.json: tab_sources).
@@ -256,7 +256,7 @@ class Integrations {
 					}
 				}
 				if ( $items ) {
-					$groups[] = array( 'group' => 'Post Types', 'items' => $items );
+					$groups[] = array( 'group' => __( 'Post Types', 'binary-wp-admin-guide' ), 'items' => $items );
 				}
 			}
 
@@ -271,7 +271,7 @@ class Integrations {
 					);
 				}
 				if ( $items ) {
-					$groups[] = array( 'group' => 'Taxonomies', 'items' => $items );
+					$groups[] = array( 'group' => __( 'Taxonomies', 'binary-wp-admin-guide' ), 'items' => $items );
 				}
 			}
 
@@ -288,7 +288,7 @@ class Integrations {
 				}
 				if ( $items ) {
 					// Theme-based integrations get "Theme" optgroup.
-					$group_label = ! empty( $data['requires']['theme'] ) ? 'Theme' : $data['name'];
+					$group_label = ! empty( $data['requires']['theme'] ) ? __( 'Theme', 'binary-wp-admin-guide' ) : $data['name'];
 					$groups[] = array( 'group' => $group_label, 'items' => $items );
 				}
 			}

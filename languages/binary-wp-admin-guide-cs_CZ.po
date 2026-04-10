@@ -1,0 +1,343 @@
+# Translation template for Admin Guide.
+# Copyright (C) 2026 BinaryWP
+# This file is distributed under the same license as the Admin Guide package.
+# BinaryWP <hello@binarywp.dev>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Admin Guide 0.2.0\n"
+"Report-Msgid-Bugs-To: https://github.com/binary-wp/admin-guide/issues\n"
+"POT-Creation-Date: 2026-04-10 17:50+0200\n"
+"PO-Revision-Date: 2026-04-10 17:50+0200\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: cs\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+
+#: src/Integrations.php:242 src/Admin.php:458
+msgid "System"
+msgstr "Systém"
+
+#: src/Integrations.php:259
+msgid "Post Types"
+msgstr "Typy obsahu"
+
+#: src/Integrations.php:274 integrations/functions/default.php:125
+#: integrations/functions/default.php:180
+msgid "Taxonomies"
+msgstr "Taxonomie"
+
+#: src/Integrations.php:291
+msgid "Theme"
+msgstr "Šablona"
+
+#: src/Config.php:269
+msgid "Invalid bundle: missing version."
+msgstr "Neplatný balíček: chybí verze."
+
+#. translators: 1: bundle version number, 2: expected version number
+#: src/Config.php:276
+#, php-format
+msgid "Unsupported bundle version %1$d (expected %2$d)."
+msgstr "Nepodporovaná verze balíčku %1$d (očekáváno %2$d)."
+
+#: src/Config.php:283
+msgid "Invalid bundle: missing tabs."
+msgstr "Neplatný balíček: chybí záložky."
+
+#: src/Admin.php:74 src/Admin.php:140
+msgid "Guide Builder"
+msgstr "Průvodce administrací"
+
+#: src/Admin.php:145
+msgid "Export"
+msgstr "Exportovat"
+
+#: src/Admin.php:146
+msgid "Import"
+msgstr "Importovat"
+
+#: src/Admin.php:152
+msgid "Import guide bundle"
+msgstr "Importovat balíček průvodce"
+
+#: src/Admin.php:152
+msgid "this will replace all current tabs and templates."
+msgstr "tímto přepíšete všechny aktuální záložky a šablony."
+
+#: src/Admin.php:157
+msgid "Import &amp; Replace"
+msgstr "Importovat &amp; přepsat"
+
+#: src/Admin.php:158
+msgid "Cancel"
+msgstr "Zrušit"
+
+#: src/Admin.php:163
+msgid "Guide updated and regenerated."
+msgstr "Průvodce byl aktualizován a znovu vygenerován."
+
+#: src/Admin.php:166
+msgid "Guide bundle imported."
+msgstr "Balíček průvodce byl importován."
+
+#: src/Admin.php:179
+msgid "Guides"
+msgstr "Průvodce"
+
+#: src/Admin.php:180
+msgid "Save Changes"
+msgstr "Uložit změny"
+
+#: src/Admin.php:183
+msgid "Drag to reorder. Click to expand and edit content."
+msgstr "Přetažením změníte pořadí. Kliknutím rozbalíte a upravíte obsah."
+
+#: src/Admin.php:200
+msgid "Remove"
+msgstr "Odebrat"
+
+#: src/Admin.php:206
+msgid "Label:"
+msgstr "Popisek:"
+
+#: src/Admin.php:207
+msgid "Slug:"
+msgstr "Identifikátor:"
+
+#: src/Admin.php:213
+msgid "Save"
+msgstr "Uložit"
+
+#: src/Admin.php:223
+msgid "Add Guide"
+msgstr "Přidat průvodce"
+
+#: src/Admin.php:225
+msgid "System Guide"
+msgstr "Systémový průvodce"
+
+#: src/Admin.php:227
+msgid "— Select source —"
+msgstr "— Vyberte zdroj —"
+
+#: src/Admin.php:228 src/Admin.php:236
+msgid "Add"
+msgstr "Přidat"
+
+#: src/Admin.php:232
+msgid "Custom Guide"
+msgstr "Vlastní průvodce"
+
+#: src/Admin.php:234
+msgid "slug"
+msgstr "identifikátor"
+
+#: src/Admin.php:235
+msgid "Label"
+msgstr "Popisek"
+
+#: src/Admin.php:244
+msgid "Placeholders"
+msgstr "Zástupné značky"
+
+#: src/Admin.php:245
+msgid "Click to insert at cursor, or drag into the editor."
+msgstr "Kliknutím vložíte na pozici kurzoru, nebo přetáhněte do editoru."
+
+#: src/Admin.php:270 src/Admin.php:369 src/Admin.php:389
+msgid "Permission denied."
+msgstr "Přístup odepřen."
+
+#: src/Admin.php:290
+msgid "Slug and label are required."
+msgstr "Identifikátor a popisek jsou povinné."
+
+#: src/Admin.php:293
+msgid "Tab already exists."
+msgstr "Záložka již existuje."
+
+#: src/Admin.php:303 src/Admin.php:340
+msgid "Slug is required."
+msgstr "Identifikátor je povinný."
+
+#: src/Admin.php:396
+msgid "No file uploaded."
+msgstr "Nebyl nahrán žádný soubor."
+
+#: src/Admin.php:402
+msgid "Invalid upload."
+msgstr "Neplatné nahrání souboru."
+
+#: src/Admin.php:410
+msgid "File is not valid JSON."
+msgstr "Soubor není platný JSON."
+
+#: src/Admin.php:455
+msgid "Custom"
+msgstr "Vlastní"
+
+#: src/Admin.php:461
+msgid "Post Type"
+msgstr "Typ obsahu"
+
+#: src/Admin.php:464
+msgid "Taxonomy"
+msgstr "Taxonomie"
+
+#: integrations/functions/default.php:110
+msgid "Content Types"
+msgstr "Typy obsahu"
+
+#: integrations/functions/default.php:113
+msgid "Special Content Types"
+msgstr "Speciální typy obsahu"
+
+#: integrations/functions/default.php:124
+#: integrations/functions/default.php:179
+msgid "Content Type"
+msgstr "Typ obsahu"
+
+#: integrations/functions/default.php:126
+msgid "User Guide"
+msgstr "Uživatelský průvodce"
+
+#: integrations/functions/default.php:127
+msgid "Registered by"
+msgstr "Zaregistrováno pluginem"
+
+#: integrations/functions/default.php:174
+msgid "All content types have dedicated guide tabs."
+msgstr "Všechny typy obsahu mají vyhrazené záložky v průvodci."
+
+#: integrations/functions/default.php:253
+#: integrations/functions/default.php:277
+#: integrations/functions/default.php:287
+msgid "Classic Editor"
+msgstr "Klasický editor"
+
+#: integrations/functions/default.php:254
+msgid "single rich-text area with formatting toolbar."
+msgstr "jedna oblast formátovaného textu s panelem nástrojů."
+
+#: integrations/functions/default.php:255
+#: integrations/functions/default.php:261
+#: integrations/functions/default.php:267
+msgid "Documentation"
+msgstr "Dokumentace"
+
+#: integrations/functions/default.php:256
+#: integrations/functions/default.php:262
+#: integrations/functions/default.php:268
+msgid "Used by:"
+msgstr "Používá:"
+
+#: integrations/functions/default.php:259
+#: integrations/functions/default.php:278
+#: integrations/functions/default.php:290
+msgid "Block Editor"
+msgstr "Blokový editor"
+
+#: integrations/functions/default.php:260
+msgid "block-based editor with drag & drop."
+msgstr "blokový editor s podporou drag & drop."
+
+#: integrations/functions/default.php:266
+msgid "visual page builder for complex layouts."
+msgstr "vizuální editor stránek pro složité layouty."
+
+#: integrations/functions/default.php:271
+msgid "No editors detected."
+msgstr "Nebyl detekován žádný editor."
+
+#: integrations/functions/default.php:279
+msgid "or"
+msgstr "nebo"
+
+#: integrations/functions/default.php:279
+msgid "WordPress Editor"
+msgstr "Editor WordPress"
+
+#. translators: 1: first editor link, 2: second editor link
+#: integrations/functions/default.php:296
+#, php-format
+msgid "the %1$s or %2$s"
+msgstr "%1$s nebo %2$s"
+
+#: integrations/functions/default.php:302
+#, php-format
+msgid "the %s"
+msgstr "%s"
+
+#: integrations/functions/default.php:304
+msgid "the WordPress Editor"
+msgstr "editor WordPress"
+
+#: integrations/functions/default.php:323
+msgid "No categories found."
+msgstr "Nebyly nalezeny žádné kategorie."
+
+#: integrations/functions/default.php:341
+msgid "Store, payments, shipping, tax"
+msgstr "Obchod, platby, doprava, daně"
+
+#: integrations/functions/default.php:344
+msgid "Business info, opening hours, contact"
+msgstr "Informace o firmě, otevírací doba, kontakt"
+
+#: integrations/functions/default.php:348
+msgid "No settings dashboards detected."
+msgstr "Nebyly detekovány žádné nástěnky nastavení."
+
+#: integrations/functions/default.php:353
+msgid "Dashboard"
+msgstr "Nástěnka"
+
+#: integrations/functions/default.php:354
+msgid "Purpose"
+msgstr "Účel"
+
+#: integrations/functions/default.php:355
+msgid "Link"
+msgstr "Odkaz"
+
+#: integrations/functions/default.php:360
+msgid "Open"
+msgstr "Otevřít"
+
+#: integrations/functions/default.php:369
+msgid "Integration registry not available."
+msgstr "Registr integrací není k dispozici."
+
+#: integrations/functions/default.php:375
+msgid "No external service integrations detected."
+msgstr "Nebyly detekovány žádné integrace externích služeb."
+
+#: integrations/functions/default.php:381
+msgid "Service"
+msgstr "Služba"
+
+#: integrations/functions/default.php:382
+msgid "Connection"
+msgstr "Připojení"
+
+#: integrations/functions/default.php:383
+msgid "Status"
+msgstr "Stav"
+
+#: integrations/functions/default.php:384
+#: integrations/functions/default.php:396
+#: integrations/functions/default.php:418
+msgid "Settings"
+msgstr "Nastavení"
+
+#: integrations/functions/default.php:394
+msgid "Unknown"
+msgstr "Neznámý"
+
+#: integrations/functions/default.php:415
+msgid "Checking…"
+msgstr "Kontroluji…"

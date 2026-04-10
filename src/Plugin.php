@@ -26,8 +26,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Plugin {
 
+	/** Text domain shared across all instances of the package. */
+	const TEXT_DOMAIN = 'binary-wp-admin-guide';
+
 	/** @var Plugin[] prefix => instance */
 	private static $instances = array();
+
+	/** @var bool Guard so textdomain is loaded once per request regardless of instance count. */
+	private static $textdomain_loaded = false;
 
 	/** @var Context */
 	public $context;
@@ -68,7 +74,33 @@ class Plugin {
 		$instance        = new self( $context );
 		self::$instances[ $prefix ] = $instance;
 
+		// Register textdomain loader on `init` (required from WP 6.7+).
+		if ( ! self::$textdomain_loaded ) {
+			self::$textdomain_loaded = true;
+			add_action( 'init', array( __CLASS__, 'load_textdomain' ), 1 );
+		}
+
 		return $instance;
+	}
+
+	/**
+	 * Load the shared text domain from the package's languages/ directory.
+	 *
+	 * Runs once per request regardless of how many instances are booted.
+	 */
+	public static function load_textdomain() {
+		$first = self::first();
+		if ( ! $first ) {
+			return;
+		}
+		$mo_dir = $first->context->package_path . 'languages/';
+		$locale = determine_locale();
+		$locale = apply_filters( 'plugin_locale', $locale, self::TEXT_DOMAIN );
+		$mo     = $mo_dir . self::TEXT_DOMAIN . '-' . $locale . '.mo';
+
+		if ( file_exists( $mo ) ) {
+			load_textdomain( self::TEXT_DOMAIN, $mo );
+		}
 	}
 
 	/**

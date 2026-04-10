@@ -266,13 +266,21 @@ class Config {
 	 */
 	public function import( $bundle ) {
 		if ( ! is_array( $bundle ) || ! isset( $bundle['version'] ) ) {
-			return new WP_Error( 'invalid_bundle', 'Invalid bundle: missing version.' );
+			return new WP_Error( 'invalid_bundle', __( 'Invalid bundle: missing version.', 'binary-wp-admin-guide' ) );
 		}
 		if ( (int) $bundle['version'] !== self::VERSION ) {
-			return new WP_Error( 'version_mismatch', sprintf( 'Unsupported bundle version %d (expected %d).', (int) $bundle['version'], self::VERSION ) );
+			return new WP_Error(
+				'version_mismatch',
+				sprintf(
+					/* translators: 1: bundle version number, 2: expected version number */
+					__( 'Unsupported bundle version %1$d (expected %2$d).', 'binary-wp-admin-guide' ),
+					(int) $bundle['version'],
+					self::VERSION
+				)
+			);
 		}
 		if ( ! isset( $bundle['config']['tabs'] ) || ! is_array( $bundle['config']['tabs'] ) ) {
-			return new WP_Error( 'invalid_bundle', 'Invalid bundle: missing tabs.' );
+			return new WP_Error( 'invalid_bundle', __( 'Invalid bundle: missing tabs.', 'binary-wp-admin-guide' ) );
 		}
 
 		$tabs = array();

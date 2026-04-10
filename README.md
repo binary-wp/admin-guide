@@ -93,6 +93,47 @@ Actions:
 - `guide_builder/placeholders` — register custom placeholders
 - `guide_builder/integrations` — register additional integrations at runtime
 
+## Translations
+
+The package ships with a translation template (`languages/binary-wp-admin-guide.pot`) and a Czech translation (`cs_CZ`) out of the box. The text domain is `binary-wp-admin-guide` and is loaded automatically on `init` priority 1.
+
+To contribute a translation:
+
+1. Copy `languages/binary-wp-admin-guide.pot` to `languages/binary-wp-admin-guide-{locale}.po` (e.g. `fr_FR`, `de_DE`).
+2. Translate each `msgstr` in the `.po` file (use [Poedit](https://poedit.net/) or any PO editor).
+3. Compile to `.mo`:
+   ```bash
+   msgfmt --check --output-file=languages/binary-wp-admin-guide-{locale}.mo \
+          languages/binary-wp-admin-guide-{locale}.po
+   ```
+4. Submit a pull request against `main` with both `.po` and `.mo` files.
+
+### Regenerating the `.pot` template
+
+After adding or modifying translatable strings in the source, regenerate the template:
+
+```bash
+xgettext \
+  --language=PHP --from-code=UTF-8 \
+  --keyword=__:1 --keyword=_e:1 \
+  --keyword=esc_html__:1 --keyword=esc_html_e:1 \
+  --keyword=esc_attr__:1 --keyword=esc_attr_e:1 \
+  --keyword=_x:1,2c --keyword=esc_html_x:1,2c \
+  --keyword=_n:1,2 --keyword=_nx:1,2,4c \
+  --copyright-holder='BinaryWP' \
+  --package-name='Admin Guide' --package-version='0.2.0' \
+  --msgid-bugs-address='https://github.com/binary-wp/admin-guide/issues' \
+  --add-comments=translators: \
+  --output=languages/binary-wp-admin-guide.pot \
+  src/*.php integrations/functions/*.php admin-guide.php
+```
+
+Then merge the new template into existing `.po` files:
+
+```bash
+msgmerge --update languages/binary-wp-admin-guide-cs_CZ.po languages/binary-wp-admin-guide.pot
+```
+
 ## License
 
 MIT
