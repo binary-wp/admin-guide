@@ -1,6 +1,6 @@
 /**
  * Guide Builder — Admin Styles.
- * Uses WP native classes (postbox, inside, regular-text) where possible.
+ * Nav-menu style hierarchical sortable + editor page.
  */
 
 /* ── Layout ──────────────────────────────────────────────────────────── */
@@ -17,29 +17,6 @@
 	min-width: 0;
 }
 
-.guide-builder-sidebar {
-	width: 280px;
-	flex-shrink: 0;
-	position: sticky;
-	top: 42px; /* Below WP admin bar. */
-	background: #fff;
-	border: 1px solid #c3c4c7;
-	padding: 12px 15px;
-	border-radius: 4px;
-}
-
-.guide-builder-sidebar h3 {
-	margin-top: 0;
-}
-
-/* ── Tab List ────────────────────────────────────────────────────────── */
-
-.guide-tabs-list {
-	margin: 12px 0 0;
-	padding: 0;
-	list-style: none;
-}
-
 .guide-builder-main > h2 {
 	margin-bottom: 0;
 }
@@ -48,107 +25,77 @@
 	margin: 25px 0 20px;
 }
 
-.guide-tab-item {
-	margin-bottom: 2px;
-	background: #fff;
-	border: 1px solid #c3c4c7;
+.guide-builder-sidebar {
+	width: 300px;
+	flex-shrink: 0;
 }
 
-.guide-tab-header {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	padding: 10px 12px;
-	cursor: pointer;
-	transition: background 0.1s;
+/* ── Nav-menu sortable overrides ─────────────────────────────────────── */
+
+/* Wrapper for nav-menu sortable. */
+.guide-builder-main .menu-edit {
+	margin-top: 12px;
 }
 
-.guide-tab-header:hover {
-	background: #f6f7f7;
+.guide-builder-main .postbox .inside {
+	margin: 0;
+	padding: 0;
 }
 
-.guide-tab-handle {
-	cursor: grab;
-	color: #8c8f94;
+/* Override WP nav-menu max-width to use full main column width. */
+#guide-sortable {
+	padding: 0 10px !important;
 }
 
-.guide-tab-handle:active {
-	cursor: grabbing;
+#guide-sortable .menu-item-bar .menu-item-handle {
+	max-width: none;
 }
 
-.guide-tab-label {
-	flex: 1;
-	font-weight: 600;
-	color: #1d2327;
+#guide-sortable .menu-item-settings {
+	max-width: none;
 }
 
-.guide-tab-toggle {
-	color: #8c8f94;
-	transition: transform 0.15s;
-}
+/* Arrow toggle is handled natively by WP nav-menu CSS (.item-edit::before). */
 
-.guide-tab-source {
-	font-size: 11px;
-	padding: 2px 8px;
-	border-radius: 3px;
-	color: #50575e;
-	background: #f0f0f1;
-}
-
-.guide-tab-source--system {
-	/* WP notice-warning colors. */
-	color: #996800;
-	background: #fff8e5;
-	border: 1px solid #dba617;
-}
-
-.guide-tab-source--platform,
-.guide-tab-source--post_type,
-.guide-tab-source--taxonomy {
-	/* WP admin theme color. */
-	color: var(--wp-admin-theme-color, #2271b1);
-	background: #f0f6fc;
-	border: 1px solid var(--wp-admin-theme-color, #2271b1);
-}
-
-.guide-tab-source--custom {
-	color: #50575e;
-	background: #f0f0f1;
-	border: 1px solid #c3c4c7;
-}
-
-.guide-tab-remove .dashicons {
-	color: #b32d2e;
-	font-size: 16px;
-	width: 16px;
-	height: 16px;
-}
-
-.guide-tab-remove:hover .dashicons {
-	color: #d63638;
-}
-
-.guide-tab-placeholder {
-	height: 44px;
-	margin-bottom: 2px;
+#guide-sortable .sortable-placeholder {
 	border: 2px dashed #2271b1;
 	background: #f0f6fc;
+	margin-bottom: 0;
+	max-width: none;
+	height: 40px;
 }
 
-/* ── Inline Editor ───────────────────────────────────────────────────── */
-
-.guide-tab-editor {
-	padding: 15px;
-	border-top: 1px solid #dcdcde;
-	background: #f6f7f7;
+/* Edit Content link in settings panel. */
+#guide-sortable .item-edit-link {
+	text-decoration: none;
+	font-weight: 600;
 }
+
+#guide-sortable .item-edit-link:hover {
+	text-decoration: underline;
+}
+
+/* ── Sidebar Metaboxes ────────────────────────────────────────────────── */
+
+.guide-builder-sidebar .postbox {
+	margin-bottom: 15px;
+}
+
+.guide-builder-sidebar .postbox-header h2 {
+	padding: 8px 12px;
+	font-size: 13px;
+}
+
+.guide-builder-sidebar .postbox .inside {
+	margin: 0;
+	padding: 10px 12px;
+}
+
+/* ── Editor Page: Meta Fields ────────────────────────────────────────── */
 
 .guide-tab-meta {
 	display: flex;
 	gap: 15px;
-	margin-bottom: 12px;
-	padding-bottom: 12px;
-	border-bottom: 1px solid #dcdcde;
 }
 
 .guide-tab-meta label {
@@ -158,55 +105,6 @@
 	display: flex;
 	align-items: center;
 	gap: 6px;
-}
-
-.guide-tab-editor-area {
-	margin-bottom: 12px;
-}
-
-.guide-tab-editor-area textarea {
-	width: 100%;
-	min-height: 300px;
-}
-
-.guide-tab-actions {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	padding-top: 10px;
-	border-top: 1px solid #dcdcde;
-}
-
-.guide-tab-save-status {
-	font-size: 13px;
-	color: #00a32a;
-	font-style: italic;
-}
-
-/* ── Add Tab ─────────────────────────────────────────────────────────── */
-
-.guide-add-fieldset {
-	border: 1px solid #dcdcde;
-	border-radius: 4px;
-	padding: 10px 14px;
-	margin: 0 0 10px;
-}
-
-.guide-add-fieldset legend {
-	font-weight: 600;
-	padding: 0 6px;
-	color: #1d2327;
-}
-
-.guide-add-inline {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	flex-wrap: wrap;
-}
-
-.guide-add-inline select {
-	min-width: 280px;
 }
 
 /* ── Placeholder Palette ─────────────────────────────────────────────── */

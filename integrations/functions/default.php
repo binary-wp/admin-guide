@@ -107,10 +107,10 @@ function guide_render_wp_content_types_table() {
 	}
 
 	ob_start();
-	echo '<h4 id="content-types">' . esc_html__( 'Content Types', 'binary-wp-admin-guide' ) . '</h4>';
+	echo '<h4 id="content-types">Content Types</h4>';
 	guide_render_cpt_table( $content_types );
 	if ( $special ) {
-		echo '<h4 id="special-content-types">' . esc_html__( 'Special Content Types', 'binary-wp-admin-guide' ) . '</h4>';
+		echo '<h4 id="special-content-types">Special Content Types</h4>';
 		guide_render_cpt_table( $special );
 	}
 	return ob_get_clean();
@@ -121,10 +121,7 @@ function guide_render_cpt_table( $entries ) {
 	$tabs   = $config ? $config->get_tabs() : array();
 
 	echo '<table class="widefat fixed striped" style="max-width:800px;margin-bottom:20px"><thead><tr>';
-	echo '<th>' . esc_html__( 'Content Type', 'binary-wp-admin-guide' ) . '</th>';
-	echo '<th>' . esc_html__( 'Taxonomies', 'binary-wp-admin-guide' ) . '</th>';
-	echo '<th>' . esc_html__( 'User Guide', 'binary-wp-admin-guide' ) . '</th>';
-	echo '<th>' . esc_html__( 'Registered by', 'binary-wp-admin-guide' ) . '</th>';
+	echo '<th>Content Type</th><th>Taxonomies</th><th>User Guide</th><th>Registered by</th>';
 	echo '</tr></thead><tbody>';
 
 	foreach ( $entries as $entry ) {
@@ -171,14 +168,12 @@ function guide_render_wp_other_content_table() {
 	}
 
 	if ( empty( $others ) ) {
-		return '<p><em>' . esc_html__( 'All content types have dedicated guide tabs.', 'binary-wp-admin-guide' ) . '</em></p>';
+		return '<p><em>All content types have dedicated guide tabs.</em></p>';
 	}
 
 	ob_start();
 	echo '<table class="widefat fixed striped" style="max-width:600px"><thead><tr>';
-	echo '<th>' . esc_html__( 'Content Type', 'binary-wp-admin-guide' ) . '</th>';
-	echo '<th>' . esc_html__( 'Taxonomies', 'binary-wp-admin-guide' ) . '</th>';
-	echo '</tr></thead><tbody>';
+	echo '<th>Content Type</th><th>Taxonomies</th></tr></thead><tbody>';
 
 	foreach ( $others as $obj ) {
 		$edit_url = $obj->name === 'post' ? admin_url( 'edit.php' ) : admin_url( 'edit.php?post_type=' . $obj->name );
@@ -250,33 +245,75 @@ function guide_render_wp_editors_list() {
 	$items    = array();
 
 	if ( $detected['classic'] ) {
-		$items[] = '<li><strong>' . esc_html__( 'Classic Editor', 'binary-wp-admin-guide' ) . '</strong> — '
-			. esc_html__( 'single rich-text area with formatting toolbar.', 'binary-wp-admin-guide' ) . ' '
-			. '<a href="https://wordpress.org/documentation/article/classic-editor/" target="_blank">' . esc_html__( 'Documentation', 'binary-wp-admin-guide' ) . ' &rarr;</a>'
-			. '<br><span class="description">' . esc_html__( 'Used by:', 'binary-wp-admin-guide' ) . ' ' . guide_render_type_links( $detected['classic_types'] ) . '</span></li>';
+		$items[] = '<li><strong>Classic Editor</strong> — single rich-text area with formatting toolbar. '
+			. '<a href="https://wordpress.org/documentation/article/first-steps-with-wordpress-classic/" target="_blank">Documentation &rarr;</a>'
+			. '<br><span class="description">Used by: ' . guide_render_type_links( $detected['classic_types'] ) . '</span></li>';
 	}
 	if ( $detected['block'] ) {
-		$items[] = '<li><strong>' . esc_html__( 'Block Editor', 'binary-wp-admin-guide' ) . '</strong> (Gutenberg) — '
-			. esc_html__( 'block-based editor with drag & drop.', 'binary-wp-admin-guide' ) . ' '
-			. '<a href="https://wordpress.org/documentation/article/wordpress-block-editor/" target="_blank">' . esc_html__( 'Documentation', 'binary-wp-admin-guide' ) . ' &rarr;</a>'
-			. '<br><span class="description">' . esc_html__( 'Used by:', 'binary-wp-admin-guide' ) . ' ' . guide_render_type_links( $detected['block_types'] ) . '</span></li>';
+		$items[] = '<li><strong>Block Editor</strong> (Gutenberg) — block-based editor with drag & drop. '
+			. '<a href="https://wordpress.org/documentation/article/wordpress-block-editor/" target="_blank">Documentation &rarr;</a>'
+			. '<br><span class="description">Used by: ' . guide_render_type_links( $detected['block_types'] ) . '</span></li>';
 	}
 	if ( $detected['elementor'] ) {
-		$items[] = '<li><strong>Elementor</strong> — '
-			. esc_html__( 'visual page builder for complex layouts.', 'binary-wp-admin-guide' ) . ' '
-			. '<a href="https://elementor.com/help/" target="_blank">' . esc_html__( 'Documentation', 'binary-wp-admin-guide' ) . ' &rarr;</a>'
-			. '<br><span class="description">' . esc_html__( 'Used by:', 'binary-wp-admin-guide' ) . ' ' . guide_render_type_links( $detected['elementor_types'] ) . '</span></li>';
+		$items[] = '<li><strong>Elementor</strong> — visual page builder for complex layouts. '
+			. '<a href="https://elementor.com/help/" target="_blank">Documentation &rarr;</a>'
+			. '<br><span class="description">Enabled for: ' . guide_render_type_links( $detected['elementor_types'] ) . '</span>'
+			. guide_render_non_elementor_posts( $detected['elementor_types'] )
+			. '</li>';
 	}
 
-	return $items ? '<ul>' . implode( "\n", $items ) . '</ul>' : '<p><em>' . esc_html__( 'No editors detected.', 'binary-wp-admin-guide' ) . '</em></p>';
+	return $items ? '<ul>' . implode( "\n", $items ) . '</ul>' : '<p><em>No editors detected.</em></p>';
+}
+
+/**
+ * For each Elementor-enabled post type, list published posts NOT built with Elementor.
+ */
+function guide_render_non_elementor_posts( $elementor_types ) {
+	global $wpdb;
+
+	$sections = array();
+
+	foreach ( $elementor_types as $entry ) {
+		$pt_slug  = $entry['slug'];
+		$pt_label = $entry['label'];
+
+		// Find published posts of this type that do NOT have _elementor_edit_mode = 'builder'.
+		$posts = $wpdb->get_results( $wpdb->prepare(
+			"SELECT p.ID, p.post_title FROM {$wpdb->posts} p
+			WHERE p.post_type = %s
+			AND p.post_status = 'publish'
+			AND p.ID NOT IN (
+				SELECT pm.post_id FROM {$wpdb->postmeta} pm
+				WHERE pm.meta_key = '_elementor_edit_mode'
+				AND pm.meta_value = 'builder'
+			)
+			ORDER BY p.post_title",
+			$pt_slug
+		) );
+
+		if ( ! $posts ) {
+			continue;
+		}
+
+		$links = array();
+		foreach ( $posts as $p ) {
+			$edit_url = get_edit_post_link( $p->ID );
+			$links[]  = '<a href="' . esc_url( $edit_url ) . '">' . esc_html( $p->post_title ) . '</a>';
+		}
+
+		$sections[] = '<br><span class="description">' . esc_html( $pt_label ) . ' not using Elementor: '
+			. implode( ', ', $links ) . '</span>';
+	}
+
+	return implode( '', $sections );
 }
 
 function guide_render_wp_editor_name_text() {
 	$editors = guide_detect_wp_editors();
 	$names   = array();
-	if ( $editors['classic'] ) $names[] = __( 'Classic Editor', 'binary-wp-admin-guide' );
-	if ( $editors['block'] )   $names[] = __( 'Block Editor', 'binary-wp-admin-guide' );
-	return $names ? implode( ' ' . __( 'or', 'binary-wp-admin-guide' ) . ' ', $names ) : __( 'WordPress Editor', 'binary-wp-admin-guide' );
+	if ( $editors['classic'] ) $names[] = 'Classic Editor';
+	if ( $editors['block'] )   $names[] = 'Block Editor';
+	return $names ? implode( ' or ', $names ) : 'WordPress Editor';
 }
 
 function guide_render_wp_allowed_editors_text() {
@@ -284,24 +321,15 @@ function guide_render_wp_allowed_editors_text() {
 	$parts   = array();
 
 	if ( $editors['classic'] ) {
-		$parts[] = '<a href="https://wordpress.org/documentation/article/classic-editor/" target="_blank">' . esc_html__( 'Classic Editor', 'binary-wp-admin-guide' ) . '</a>';
+		$parts[] = '<a href="https://wordpress.org/documentation/article/classic-editor/" target="_blank">Classic Editor</a>';
 	}
 	if ( $editors['block'] ) {
-		$parts[] = '<a href="https://wordpress.org/documentation/article/wordpress-block-editor/" target="_blank">' . esc_html__( 'Block Editor', 'binary-wp-admin-guide' ) . '</a>';
+		$parts[] = '<a href="https://wordpress.org/documentation/article/wordpress-block-editor/" target="_blank">Block Editor</a>';
 	}
 
-	if ( count( $parts ) === 2 ) {
-		return sprintf(
-			/* translators: 1: first editor link, 2: second editor link */
-			__( 'the %1$s or %2$s', 'binary-wp-admin-guide' ),
-			$parts[0],
-			$parts[1]
-		);
-	}
-	if ( count( $parts ) === 1 ) {
-		return sprintf( __( 'the %s', 'binary-wp-admin-guide' ), $parts[0] );
-	}
-	return __( 'the WordPress Editor', 'binary-wp-admin-guide' );
+	if ( count( $parts ) === 2 ) return 'the ' . $parts[0] . ' or ' . $parts[1];
+	if ( count( $parts ) === 1 ) return 'the ' . $parts[0];
+	return 'the WordPress Editor';
 }
 
 // ── General / misc ──────────────────────────────────────────────────
@@ -320,7 +348,7 @@ function guide_render_wp_post_categories_list() {
 		$cats = get_terms( array( 'taxonomy' => 'category', 'hide_empty' => false, 'orderby' => 'term_order', 'order' => 'ASC' ) );
 	}
 	if ( is_wp_error( $cats ) || empty( $cats ) ) {
-		return '<p><em>' . esc_html__( 'No categories found.', 'binary-wp-admin-guide' ) . '</em></p>';
+		return '<p><em>No categories found.</em></p>';
 	}
 
 	ob_start();
@@ -338,26 +366,23 @@ function guide_render_wp_settings_dashboards_table() {
 	$dashboards = array();
 
 	if ( class_exists( 'WooCommerce' ) ) {
-		$dashboards[] = array( 'WooCommerce', __( 'Store, payments, shipping, tax', 'binary-wp-admin-guide' ), admin_url( 'admin.php?page=wc-settings' ) );
+		$dashboards[] = array( 'WooCommerce', 'Store, payments, shipping, tax', admin_url( 'admin.php?page=wc-settings' ) );
 	}
 	if ( function_exists( 'bpfwp_setting' ) || defined( 'BPFWP_PLUGIN_DIR' ) ) {
-		$dashboards[] = array( 'Business Profile', __( 'Business info, opening hours, contact', 'binary-wp-admin-guide' ), admin_url( 'admin.php?page=bpfwp-settings' ) );
+		$dashboards[] = array( 'Business Profile', 'Business info, opening hours, contact', admin_url( 'admin.php?page=bpfwp-settings' ) );
 	}
 
 	if ( empty( $dashboards ) ) {
-		return '<p><em>' . esc_html__( 'No settings dashboards detected.', 'binary-wp-admin-guide' ) . '</em></p>';
+		return '<p><em>No settings dashboards detected.</em></p>';
 	}
 
 	ob_start();
 	echo '<table class="widefat fixed striped" style="max-width:750px"><thead><tr>';
-	echo '<th>' . esc_html__( 'Dashboard', 'binary-wp-admin-guide' ) . '</th>';
-	echo '<th>' . esc_html__( 'Purpose', 'binary-wp-admin-guide' ) . '</th>';
-	echo '<th>' . esc_html__( 'Link', 'binary-wp-admin-guide' ) . '</th>';
-	echo '</tr></thead><tbody>';
+	echo '<th>Dashboard</th><th>Purpose</th><th>Link</th></tr></thead><tbody>';
 	foreach ( $dashboards as $d ) {
 		echo '<tr><td><strong>' . esc_html( $d[0] ) . '</strong></td>';
 		echo '<td>' . esc_html( $d[1] ) . '</td>';
-		echo '<td><a href="' . esc_url( $d[2] ) . '">' . esc_html__( 'Open', 'binary-wp-admin-guide' ) . ' &rarr;</a></td></tr>';
+		echo '<td><a href="' . esc_url( $d[2] ) . '">Open &rarr;</a></td></tr>';
 	}
 	echo '</tbody></table>';
 	return ob_get_clean();
@@ -366,23 +391,19 @@ function guide_render_wp_settings_dashboards_table() {
 function guide_render_wp_external_services_table() {
 	$integrations = guide_current_integrations();
 	if ( ! $integrations ) {
-		return '<p><em>' . esc_html__( 'Integration registry not available.', 'binary-wp-admin-guide' ) . '</em></p>';
+		return '<p><em>Integration registry not available.</em></p>';
 	}
 
 	$externals = $integrations->get_external();
 
 	if ( empty( $externals ) ) {
-		return '<p><em>' . esc_html__( 'No external service integrations detected.', 'binary-wp-admin-guide' ) . '</em></p>';
+		return '<p><em>No external service integrations detected.</em></p>';
 	}
 
 	ob_start();
 	echo '<div class="guide-external-status" data-integration="__all__">';
 	echo '<table class="widefat fixed striped" style="max-width:750px"><thead><tr>';
-	echo '<th>' . esc_html__( 'Service', 'binary-wp-admin-guide' ) . '</th>';
-	echo '<th>' . esc_html__( 'Connection', 'binary-wp-admin-guide' ) . '</th>';
-	echo '<th>' . esc_html__( 'Status', 'binary-wp-admin-guide' ) . '</th>';
-	echo '<th>' . esc_html__( 'Settings', 'binary-wp-admin-guide' ) . '</th>';
-	echo '</tr></thead><tbody>';
+	echo '<th>Service</th><th>Connection</th><th>Status</th><th>Settings</th></tr></thead><tbody>';
 
 	foreach ( $externals as $slug => $data ) {
 		$ext_services = ! empty( $data['external'] ) ? $data['external'] : array();
@@ -391,9 +412,9 @@ function guide_render_wp_external_services_table() {
 			// Integration marked external but no services listed — show as single row.
 			echo '<tr><td><strong>' . esc_html( $data['name'] ) . '</strong></td>';
 			echo '<td>&mdash;</td>';
-			echo '<td><span class="guide-status-badge" data-status="unknown">● ' . esc_html__( 'Unknown', 'binary-wp-admin-guide' ) . '</span></td>';
+			echo '<td><span class="guide-status-badge" data-status="unknown">● Unknown</span></td>';
 			if ( $data['settings_url'] ) {
-				echo '<td><a href="' . esc_url( admin_url( $data['settings_url'] ) ) . '">' . esc_html__( 'Settings', 'binary-wp-admin-guide' ) . ' &rarr;</a></td>';
+				echo '<td><a href="' . esc_url( admin_url( $data['settings_url'] ) ) . '">Settings &rarr;</a></td>';
 			} else {
 				echo '<td>&mdash;</td>';
 			}
@@ -412,10 +433,10 @@ function guide_render_wp_external_services_table() {
 				echo '<br><span class="description">' . esc_html( $ext['description'] ) . '</span>';
 			}
 			echo '</td>';
-			echo '<td class="guide-status-cell"><em>' . esc_html__( 'Checking…', 'binary-wp-admin-guide' ) . '</em></td>';
+			echo '<td class="guide-status-cell"><em>Checking...</em></td>';
 			if ( $i === 0 ) {
 				$settings = $data['settings_url']
-					? '<a href="' . esc_url( admin_url( $data['settings_url'] ) ) . '">' . esc_html__( 'Settings', 'binary-wp-admin-guide' ) . ' &rarr;</a>'
+					? '<a href="' . esc_url( admin_url( $data['settings_url'] ) ) . '">Settings &rarr;</a>'
 					: '&mdash;';
 				echo '<td rowspan="' . count( $ext_services ) . '">' . $settings . '</td>';
 			}

@@ -199,6 +199,16 @@ class Integrations {
 							return '<a href="' . esc_url( admin_url( $url ) ) . '">' . esc_html( $label ) . '</a>';
 						}, $name, $desc );
 
+					} elseif ( $type === 'image' ) {
+						$img_url = isset( $def['url'] ) ? $def['url'] : '';
+						$img_alt = isset( $def['alt'] ) ? $def['alt'] : '';
+						$desc    = isset( $def['description'] ) ? $def['description'] : $img_alt;
+
+						$ph->register( $token, function () use ( $img_url, $img_alt ) {
+							return '<img src="' . esc_url( $img_url ) . '" alt="' . esc_attr( $img_alt )
+								. '" style="max-width:100%;margin:15px 0;border:1px solid #c3c4c7">';
+						}, $name, $desc );
+
 					} elseif ( ! empty( $def['callback'] ) ) {
 						if ( ! $functions_loaded ) {
 							$this->load_functions( $slug );
@@ -239,7 +249,7 @@ class Integrations {
 						'disabled' => (int) in_array( $st['slug'], $existing, true ),
 					);
 				}
-				$groups[] = array( 'group' => __( 'System', 'binary-wp-admin-guide' ), 'items' => $items );
+				$groups[] = array( 'group' => 'System', 'items' => $items );
 			}
 
 			// Post types / taxonomies (from default.json: tab_sources).
@@ -256,7 +266,7 @@ class Integrations {
 					}
 				}
 				if ( $items ) {
-					$groups[] = array( 'group' => __( 'Post Types', 'binary-wp-admin-guide' ), 'items' => $items );
+					$groups[] = array( 'group' => 'Post Types', 'items' => $items );
 				}
 			}
 
@@ -271,7 +281,7 @@ class Integrations {
 					);
 				}
 				if ( $items ) {
-					$groups[] = array( 'group' => __( 'Taxonomies', 'binary-wp-admin-guide' ), 'items' => $items );
+					$groups[] = array( 'group' => 'Taxonomies', 'items' => $items );
 				}
 			}
 
@@ -288,7 +298,7 @@ class Integrations {
 				}
 				if ( $items ) {
 					// Theme-based integrations get "Theme" optgroup.
-					$group_label = ! empty( $data['requires']['theme'] ) ? __( 'Theme', 'binary-wp-admin-guide' ) : $data['name'];
+					$group_label = ! empty( $data['requires']['theme'] ) ? 'Theme' : $data['name'];
 					$groups[] = array( 'group' => $group_label, 'items' => $items );
 				}
 			}

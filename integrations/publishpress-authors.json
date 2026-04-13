@@ -17,6 +17,18 @@
 			"url": "edit-tags.php?taxonomy=author_category",
 			"label": "Author Categories",
 			"description": "Link to Author Categories admin listing"
+		},
+		"{{pp_authors_categories_screenshot}}": {
+			"type": "image",
+			"url": "https://publishpress.com/wp-content/uploads/2024/01/author-categories-screen-1024x365.png",
+			"alt": "Author Categories admin screen",
+			"description": "Screenshot of the Author Categories admin interface"
+		},
+		"{{pp_authors_metabox_screenshot}}": {
+			"type": "image",
+			"url": "https://publishpress.com/wp-content/uploads/2024/01/post-edit-categories.png",
+			"alt": "Author Categories metabox on post editor",
+			"description": "Screenshot of the Authors metabox on the post editor"
 		}
 	}
 }

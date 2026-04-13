@@ -133,4 +133,29 @@ class Generator {
 	public function read_intro() {
 		return $this->read_tab( 'admin-guide' );
 	}
+
+	/**
+	 * Remove generated files for a specific slug.
+	 *
+	 * Call this before generating when a slug changes,
+	 * so the old files don't linger on disk.
+	 *
+	 * @param string $slug Old slug to clean up.
+	 */
+	public function remove_files( $slug ) {
+		$safe = sanitize_file_name( $slug );
+		if ( ! $safe ) {
+			return;
+		}
+
+		$md   = $this->output_dir . $safe . '.md';
+		$html = $this->html_dir . $safe . '.html';
+
+		if ( file_exists( $md ) ) {
+			wp_delete_file( $md );
+		}
+		if ( file_exists( $html ) ) {
+			wp_delete_file( $html );
+		}
+	}
 }

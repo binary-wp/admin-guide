@@ -1,16 +1,15 @@
 <?php
 /**
- * Config (tab structure + templates).
+ * Config — CPT-based storage for guide pages.
  *
- * Stores in a single wp_option (key is prefix-scoped via Context):
- *   {prefix}_admin_guide_data = {
- *     version:   int,
- *     config:    { tabs: [...], include_general: bool, include_other: bool },
- *     templates: { slug: html, ... }
- *   }
- *
- * One-shot migrates from legacy non-prefixed option and from on-disk
- * guide/templates/*.html + config.json on first read.
+ * Each guide page is a `{prefix}_guide_page` post:
+ *   post_title   = label
+ *   post_name    = slug
+ *   post_content = HTML template (with {{placeholders}})
+ *   post_parent  = hierarchy (0 = top-level tab)
+ *   menu_order   = sort position
+ *   post_status  = publish | draft
+ *   meta: _guide_source = system|post_type|taxonomy|platform|custom
  */
 
 namespace BinaryWP\AdminGuide;
@@ -23,8 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Config {
 
-	/** Current schema version. */
-	const VERSION = 1;
+	const VERSION = 2;
 
 	/** @var Context */
 	private $context;
@@ -32,216 +30,279 @@ class Config {
 	/** @var Integrations */
 	private $integrations;
 
-	/** @var string wp_option key, derived from context prefix. */
-	private $option_key;
+	/** @var string CPT slug. */
+	private $post_type;
 
-	/** @var array|null Cached data. */
-	private $data;
+	/** @var string Option key for migration flag. */
+	private $migration_key;
 
 	public function __construct( Context $context, Integrations $integrations ) {
 		$this->context      = $context;
 		$this->integrations = $integrations;
-		$this->option_key   = $context->option_key( 'data' );
+		$this->post_type    = $context->prefix . '_guide_page';
+		$this->migration_key = $context->option_key( 'cpt_migrated' );
+
+		// One-shot migration from wp_option to CPT.
+		add_action( 'admin_init', array( $this, 'maybe_migrate' ) );
 	}
 
 	// ── Public API: tabs ────────────────────────────────────────────────
 
 	/**
-	 * Get ordered tabs as [ slug => label ].
+	 * Get ordered top-level tabs as [ slug => label ].
 	 */
 	public function get_tabs() {
-		$tabs = array();
-		foreach ( $this->read()['config']['tabs'] as $tab ) {
-			$tabs[ $tab['slug'] ] = $tab['label'];
+		$tabs  = array();
+		$posts = $this->query_guides( 0 );
+
+		foreach ( $posts as $post ) {
+			$tabs[ $post->post_name ] = $post->post_title;
 		}
+
 		return $tabs;
 	}
 
 	/**
-	 * Get full tab entries (slug, label, source).
+	 * Get full tab entries (slug, label, source) for top-level guides.
 	 */
 	public function get_tab_entries() {
-		return $this->read()['config']['tabs'];
-	}
+		$entries = array();
+		$posts   = $this->query_guides( 0 );
 
-	public function includes_general() {
-		return ! empty( $this->read()['config']['include_general'] );
-	}
+		foreach ( $posts as $post ) {
+			$entries[] = array(
+				'slug'   => $post->post_name,
+				'label'  => $post->post_title,
+				'source' => get_post_meta( $post->ID, '_guide_source', true ) ?: 'custom',
+			);
+		}
 
-	public function includes_other() {
-		return ! empty( $this->read()['config']['include_other'] );
+		return $entries;
 	}
 
 	/**
-	 * Save tab structure.
+	 * Get children of a guide by parent slug.
 	 *
-	 * @param array $tabs    Array of [ 'slug' => '', 'label' => '', 'source' => '' ].
-	 * @param array $options Optional: include_general, include_other.
+	 * @return array [ slug => label ]
 	 */
-	public function save_tabs( $tabs, $options = array() ) {
-		$data = $this->read();
-		$data['config']['tabs'] = $tabs;
-
-		if ( isset( $options['include_general'] ) ) {
-			$data['config']['include_general'] = (bool) $options['include_general'];
-		}
-		if ( isset( $options['include_other'] ) ) {
-			$data['config']['include_other'] = (bool) $options['include_other'];
+	public function get_children( $parent_slug ) {
+		$parent = $this->get_guide_by_slug( $parent_slug );
+		if ( ! $parent ) {
+			return array();
 		}
 
-		return $this->write( $data );
+		$children = array();
+		foreach ( $this->query_guides( $parent->ID ) as $post ) {
+			$children[ $post->post_name ] = $post->post_title;
+		}
+
+		return $children;
 	}
 
 	/**
-	 * Add a new tab and scaffold its template if missing.
+	 * Get all guides as flat list with hierarchy info.
+	 *
+	 * @return array [ { id, slug, label, source, parent_id, depth, menu_order } ]
 	 */
-	public function add_tab( $slug, $label, $source = 'custom' ) {
-		$data = $this->read();
+	public function get_all_guides() {
+		$posts  = $this->query_all_guides();
+		$guides = array();
+
+		// Build parent map.
+		$parent_map = array();
+		foreach ( $posts as $post ) {
+			$parent_map[ $post->ID ] = $post->post_parent;
+		}
+
+		foreach ( $posts as $post ) {
+			$depth = 0;
+			$pid   = $post->post_parent;
+			while ( $pid > 0 && isset( $parent_map[ $pid ] ) ) {
+				$depth++;
+				$pid = $parent_map[ $pid ];
+			}
+
+			$guides[] = array(
+				'id'         => $post->ID,
+				'slug'       => $post->post_name,
+				'label'      => $post->post_title,
+				'source'     => get_post_meta( $post->ID, '_guide_source', true ) ?: 'custom',
+				'parent_id'  => $post->post_parent,
+				'depth'      => $depth,
+				'menu_order' => $post->menu_order,
+			);
+		}
+
+		return $guides;
+	}
+
+	/**
+	 * Save ordered guide structure (position + parent).
+	 *
+	 * @param array $items [ { id, parent_id, position } ]
+	 */
+	public function save_order( $items ) {
+		foreach ( $items as $item ) {
+			wp_update_post( array(
+				'ID'          => (int) $item['id'],
+				'post_parent' => (int) $item['parent_id'],
+				'menu_order'  => (int) $item['position'],
+			) );
+		}
+	}
+
+	/**
+	 * Add a new guide page.
+	 */
+	public function add_tab( $slug, $label, $source = 'custom', $parent_id = 0 ) {
 		$slug = sanitize_key( $slug );
 
 		// Prevent duplicates.
-		foreach ( $data['config']['tabs'] as $tab ) {
-			if ( $tab['slug'] === $slug ) {
-				return false;
-			}
+		if ( $this->get_guide_by_slug( $slug ) ) {
+			return false;
 		}
 
-		$data['config']['tabs'][] = array(
-			'slug'   => $slug,
-			'label'  => sanitize_text_field( $label ),
-			'source' => $source,
-		);
-
-		// Scaffold template content if none exists yet.
-		if ( empty( $data['templates'][ $slug ] ) ) {
-			if ( $source === 'platform' || $source === 'system' ) {
-				$content = $this->integrations->scaffold_tab( $slug );
-			} else {
-				$content = $this->scaffold_template( $slug, $label, $source );
-			}
-			$data['templates'][ $slug ] = $content;
+		// Scaffold content.
+		if ( $source === 'platform' || $source === 'system' ) {
+			$content = $this->integrations->scaffold_tab( $slug );
+		} else {
+			$content = $this->scaffold_template( $slug, $label, $source );
 		}
 
-		return $this->write( $data );
+		// Determine menu_order — append at end.
+		$siblings = $this->query_guides( $parent_id );
+		$order    = count( $siblings );
+
+		$post_id = wp_insert_post( array(
+			'post_type'    => $this->post_type,
+			'post_title'   => sanitize_text_field( $label ),
+			'post_name'    => $slug,
+			'post_content' => wp_kses_post( $content ),
+			'post_status'  => 'publish',
+			'post_parent'  => (int) $parent_id,
+			'menu_order'   => $order,
+		) );
+
+		if ( is_wp_error( $post_id ) ) {
+			return false;
+		}
+
+		update_post_meta( $post_id, '_guide_source', sanitize_key( $source ) );
+
+		return $post_id;
 	}
 
 	/**
-	 * Remove a tab from config and drop its template.
+	 * Remove a guide page.
 	 */
 	public function remove_tab( $slug ) {
-		$data = $this->read();
+		$post = $this->get_guide_by_slug( $slug );
+		if ( ! $post ) {
+			return false;
+		}
 
-		$data['config']['tabs'] = array_values( array_filter( $data['config']['tabs'], function ( $tab ) use ( $slug ) {
-			return $tab['slug'] !== $slug;
-		} ) );
+		// Also delete children.
+		$children = get_posts( array(
+			'post_type'   => $this->post_type,
+			'post_parent' => $post->ID,
+			'numberposts' => -1,
+			'post_status' => 'any',
+		) );
+		foreach ( $children as $child ) {
+			wp_delete_post( $child->ID, true );
+		}
 
-		unset( $data['templates'][ $slug ] );
-
-		return $this->write( $data );
+		return wp_delete_post( $post->ID, true );
 	}
 
 	/**
-	 * Rename a tab (slug + label), moving the template under the new key.
+	 * Rename a guide (slug + label).
 	 */
 	public function rename_tab( $old_slug, $new_slug, $new_label = '' ) {
-		$data     = $this->read();
-		$new_slug = sanitize_key( $new_slug );
-
-		foreach ( $data['config']['tabs'] as &$tab ) {
-			if ( $tab['slug'] === $old_slug ) {
-				$tab['slug'] = $new_slug;
-				if ( $new_label ) {
-					$tab['label'] = sanitize_text_field( $new_label );
-				}
-				break;
-			}
-		}
-		unset( $tab );
-
-		if ( $old_slug !== $new_slug && isset( $data['templates'][ $old_slug ] ) ) {
-			$data['templates'][ $new_slug ] = $data['templates'][ $old_slug ];
-			unset( $data['templates'][ $old_slug ] );
+		$post = $this->get_guide_by_slug( $old_slug );
+		if ( ! $post ) {
+			return false;
 		}
 
-		return $this->write( $data );
+		$update = array( 'ID' => $post->ID );
+
+		if ( $new_slug && $new_slug !== $old_slug ) {
+			$update['post_name'] = sanitize_key( $new_slug );
+		}
+		if ( $new_label ) {
+			$update['post_title'] = sanitize_text_field( $new_label );
+		}
+
+		return wp_update_post( $update );
 	}
 
 	/**
-	 * Update just the label of a tab.
+	 * Update just the label.
 	 */
 	public function update_tab_label( $slug, $label ) {
-		$data = $this->read();
-
-		foreach ( $data['config']['tabs'] as &$tab ) {
-			if ( $tab['slug'] === $slug ) {
-				$tab['label'] = sanitize_text_field( $label );
-				break;
-			}
-		}
-		unset( $tab );
-
-		return $this->write( $data );
+		return $this->rename_tab( $slug, '', $label );
 	}
 
 	/**
-	 * Reorder tabs by slug array.
+	 * Reorder tabs by slug array (flat, top-level only).
 	 */
 	public function reorder_tabs( $slugs ) {
-		$data    = $this->read();
-		$indexed = array();
-
-		foreach ( $data['config']['tabs'] as $tab ) {
-			$indexed[ $tab['slug'] ] = $tab;
-		}
-
-		$reordered = array();
-		foreach ( $slugs as $slug ) {
-			if ( isset( $indexed[ $slug ] ) ) {
-				$reordered[] = $indexed[ $slug ];
-				unset( $indexed[ $slug ] );
+		foreach ( $slugs as $order => $slug ) {
+			$post = $this->get_guide_by_slug( $slug );
+			if ( $post ) {
+				wp_update_post( array(
+					'ID'         => $post->ID,
+					'menu_order' => $order,
+				) );
 			}
 		}
-		// Append any tabs not in the slug list (safety).
-		foreach ( $indexed as $tab ) {
-			$reordered[] = $tab;
-		}
-
-		$data['config']['tabs'] = $reordered;
-		return $this->write( $data );
 	}
 
 	// ── Public API: templates ───────────────────────────────────────────
 
 	/**
-	 * Get raw template HTML for a tab. Returns '' if not set.
+	 * Get raw template HTML for a guide.
 	 */
 	public function get_template( $slug ) {
-		$data = $this->read();
-		return isset( $data['templates'][ $slug ] ) ? $data['templates'][ $slug ] : '';
+		$post = $this->get_guide_by_slug( $slug );
+		return $post ? $post->post_content : '';
 	}
 
 	/**
-	 * Save template HTML for a tab.
+	 * Save template HTML for a guide.
 	 */
 	public function save_template( $slug, $html ) {
-		$data = $this->read();
-		$data['templates'][ $slug ] = $html;
-		return $this->write( $data );
+		$post = $this->get_guide_by_slug( $slug );
+		if ( ! $post ) {
+			return false;
+		}
+
+		return wp_update_post( array(
+			'ID'           => $post->ID,
+			'post_content' => wp_kses_post( $html ),
+		) );
 	}
 
 	/**
 	 * Whether a template exists for the given slug.
 	 */
 	public function has_template( $slug ) {
-		$data = $this->read();
-		return isset( $data['templates'][ $slug ] ) && $data['templates'][ $slug ] !== '';
+		$post = $this->get_guide_by_slug( $slug );
+		return $post && $post->post_content !== '';
 	}
 
 	/**
 	 * Get all templates as [ slug => html ].
 	 */
 	public function get_all_templates() {
-		return $this->read()['templates'];
+		$templates = array();
+		$posts     = $this->query_all_guides();
+
+		foreach ( $posts as $post ) {
+			$templates[ $post->post_name ] = $post->post_content;
+		}
+
+		return $templates;
 	}
 
 	// ── Public API: export / import ─────────────────────────────────────
@@ -250,12 +311,26 @@ class Config {
 	 * Return full data bundle for export.
 	 */
 	public function export() {
-		$data = $this->read();
+		$tabs      = array();
+		$templates = array();
+		$posts     = $this->query_all_guides();
+
+		foreach ( $posts as $post ) {
+			$tabs[] = array(
+				'slug'       => $post->post_name,
+				'label'      => $post->post_title,
+				'source'     => get_post_meta( $post->ID, '_guide_source', true ) ?: 'custom',
+				'parent'     => $post->post_parent ? get_post_field( 'post_name', $post->post_parent ) : '',
+				'menu_order' => $post->menu_order,
+			);
+			$templates[ $post->post_name ] = $post->post_content;
+		}
+
 		return array(
 			'version'     => self::VERSION,
 			'exported_at' => gmdate( 'c' ),
-			'config'      => $data['config'],
-			'templates'   => $data['templates'],
+			'config'      => array( 'tabs' => $tabs ),
+			'templates'   => $templates,
 		);
 	}
 
@@ -265,192 +340,179 @@ class Config {
 	 * @return true|WP_Error
 	 */
 	public function import( $bundle ) {
-		if ( ! is_array( $bundle ) || ! isset( $bundle['version'] ) ) {
-			return new WP_Error( 'invalid_bundle', __( 'Invalid bundle: missing version.', 'binary-wp-admin-guide' ) );
-		}
-		if ( (int) $bundle['version'] !== self::VERSION ) {
-			return new WP_Error(
-				'version_mismatch',
-				sprintf(
-					/* translators: 1: bundle version number, 2: expected version number */
-					__( 'Unsupported bundle version %1$d (expected %2$d).', 'binary-wp-admin-guide' ),
-					(int) $bundle['version'],
-					self::VERSION
-				)
-			);
-		}
-		if ( ! isset( $bundle['config']['tabs'] ) || ! is_array( $bundle['config']['tabs'] ) ) {
-			return new WP_Error( 'invalid_bundle', __( 'Invalid bundle: missing tabs.', 'binary-wp-admin-guide' ) );
+		if ( ! is_array( $bundle ) || ! isset( $bundle['config']['tabs'] ) ) {
+			return new WP_Error( 'invalid_bundle', 'Invalid bundle: missing tabs.' );
 		}
 
-		$tabs = array();
+		// Delete all existing guide pages.
+		$existing = get_posts( array(
+			'post_type'   => $this->post_type,
+			'numberposts' => -1,
+			'post_status' => 'any',
+		) );
+		foreach ( $existing as $post ) {
+			wp_delete_post( $post->ID, true );
+		}
+
+		// Insert from bundle.
+		$slug_to_id = array();
+
+		// First pass: create all posts (without parent).
+		foreach ( $bundle['config']['tabs'] as $order => $tab ) {
+			$slug    = sanitize_key( $tab['slug'] );
+			$content = isset( $bundle['templates'][ $slug ] ) ? wp_kses_post( $bundle['templates'][ $slug ] ) : '';
+
+			$post_id = wp_insert_post( array(
+				'post_type'    => $this->post_type,
+				'post_title'   => sanitize_text_field( $tab['label'] ),
+				'post_name'    => $slug,
+				'post_content' => $content,
+				'post_status'  => 'publish',
+				'menu_order'   => isset( $tab['menu_order'] ) ? (int) $tab['menu_order'] : $order,
+			) );
+
+			if ( ! is_wp_error( $post_id ) ) {
+				$slug_to_id[ $slug ] = $post_id;
+				update_post_meta( $post_id, '_guide_source', isset( $tab['source'] ) ? sanitize_key( $tab['source'] ) : 'custom' );
+			}
+		}
+
+		// Second pass: set parents.
 		foreach ( $bundle['config']['tabs'] as $tab ) {
-			if ( empty( $tab['slug'] ) || empty( $tab['label'] ) ) {
+			if ( ! empty( $tab['parent'] ) && isset( $slug_to_id[ $tab['slug'] ] ) && isset( $slug_to_id[ $tab['parent'] ] ) ) {
+				wp_update_post( array(
+					'ID'          => $slug_to_id[ $tab['slug'] ],
+					'post_parent' => $slug_to_id[ $tab['parent'] ],
+				) );
+			}
+		}
+
+		return true;
+	}
+
+	// ── Migration ───────────────────────────────────────────────────────
+
+	/**
+	 * One-shot migration from wp_option to CPT.
+	 */
+	public function maybe_migrate() {
+		if ( get_option( $this->migration_key ) ) {
+			return; // Already migrated.
+		}
+
+		$option_key = $this->context->option_key( 'data' );
+		$data       = get_option( $option_key );
+
+		if ( ! is_array( $data ) || empty( $data['config']['tabs'] ) ) {
+			// Also check legacy key.
+			$data = get_option( 'guide_builder_data' );
+		}
+
+		if ( ! is_array( $data ) || empty( $data['config']['tabs'] ) ) {
+			// Nothing to migrate — mark as done.
+			update_option( $this->migration_key, 1 );
+			return;
+		}
+
+		// Migrate tabs.
+		foreach ( $data['config']['tabs'] as $order => $tab ) {
+			$slug    = sanitize_key( $tab['slug'] );
+			$label   = sanitize_text_field( $tab['label'] );
+			$source  = isset( $tab['source'] ) ? sanitize_key( $tab['source'] ) : 'custom';
+			$content = isset( $data['templates'][ $slug ] ) ? wp_kses_post( $data['templates'][ $slug ] ) : '';
+
+			// Skip if already exists (re-entrant safety).
+			if ( $this->get_guide_by_slug( $slug ) ) {
 				continue;
 			}
-			$tabs[] = array(
-				'slug'   => sanitize_key( $tab['slug'] ),
-				'label'  => sanitize_text_field( $tab['label'] ),
-				'source' => isset( $tab['source'] ) ? sanitize_key( $tab['source'] ) : 'custom',
-			);
-		}
 
-		$templates = array();
-		if ( isset( $bundle['templates'] ) && is_array( $bundle['templates'] ) ) {
-			foreach ( $bundle['templates'] as $slug => $html ) {
-				if ( ! is_string( $html ) ) {
-					continue;
-				}
-				$templates[ sanitize_key( $slug ) ] = wp_kses_post( $html );
+			$post_id = wp_insert_post( array(
+				'post_type'    => $this->post_type,
+				'post_title'   => $label,
+				'post_name'    => $slug,
+				'post_content' => $content,
+				'post_status'  => 'publish',
+				'menu_order'   => $order,
+			) );
+
+			if ( ! is_wp_error( $post_id ) ) {
+				update_post_meta( $post_id, '_guide_source', $source );
 			}
 		}
 
-		$data = array(
-			'version' => self::VERSION,
-			'config'  => array(
-				'tabs'            => $tabs,
-				'include_general' => ! empty( $bundle['config']['include_general'] ),
-				'include_other'   => ! empty( $bundle['config']['include_other'] ),
-			),
-			'templates' => $templates,
-		);
-
-		return $this->write( $data );
+		// Mark migrated and clean up old option.
+		update_option( $this->migration_key, 1 );
+		delete_option( $option_key );
+		delete_option( 'guide_builder_data' );
 	}
 
-	// ── Storage ─────────────────────────────────────────────────────────
+	// ── Queries ─────────────────────────────────────────────────────────
 
-	private function read() {
-		if ( $this->data !== null ) {
-			return $this->data;
-		}
-
-		$stored = get_option( $this->option_key );
-
-		if ( is_array( $stored ) && isset( $stored['config']['tabs'] ) ) {
-			// Ensure templates key exists even if older record is missing it.
-			if ( ! isset( $stored['templates'] ) || ! is_array( $stored['templates'] ) ) {
-				$stored['templates'] = array();
-			}
-			$this->data = $stored;
-			return $this->data;
-		}
-
-		// Try legacy (pre-prefix) option key — carries over data from the
-		// previous non-prefixed build. One-shot migration, then cleanup.
-		$legacy_option = 'guide_builder_data';
-		$legacy_stored = get_option( $legacy_option );
-		if ( is_array( $legacy_stored ) && isset( $legacy_stored['config']['tabs'] ) ) {
-			if ( ! isset( $legacy_stored['templates'] ) || ! is_array( $legacy_stored['templates'] ) ) {
-				$legacy_stored['templates'] = array();
-			}
-			$this->data = $legacy_stored;
-			$this->write( $this->data );
-			delete_option( $legacy_option );
-			return $this->data;
-		}
-
-		// Nothing in DB — try migration from legacy filesystem layout.
-		$this->data = $this->migrate_from_files();
-		$this->write( $this->data );
-		return $this->data;
-	}
-
-	private function write( $data ) {
-		$data['version'] = self::VERSION;
-		if ( ! isset( $data['config'] ) || ! is_array( $data['config'] ) ) {
-			$data['config'] = array( 'tabs' => array(), 'include_general' => true, 'include_other' => true );
-		}
-		if ( ! isset( $data['templates'] ) || ! is_array( $data['templates'] ) ) {
-			$data['templates'] = array();
-		}
-		$this->data = $data;
-
-		return update_option( $this->option_key, $data, false );
+	/**
+	 * Get guide posts by parent, sorted by menu_order.
+	 */
+	private function query_guides( $parent_id = 0 ) {
+		return get_posts( array(
+			'post_type'   => $this->post_type,
+			'post_parent' => $parent_id,
+			'orderby'     => 'menu_order',
+			'order'       => 'ASC',
+			'numberposts' => -1,
+			'post_status' => 'publish',
+		) );
 	}
 
 	/**
-	 * One-shot migration: load legacy guide/templates/config.json and *.html files.
+	 * Get ALL guide posts, sorted hierarchically: parent → children → next parent.
 	 */
-	private function migrate_from_files() {
-		$legacy_dir = $this->context->legacy_guide_dir;
-		$legacy_dir = apply_filters( 'guide_builder/legacy_guide_dir', $legacy_dir, $this->context );
-		$legacy_dir = apply_filters( $this->context->prefix . '/guide_builder/legacy_guide_dir', $legacy_dir, $this->context );
+	private function query_all_guides() {
+		// Get all posts flat.
+		$all = get_posts( array(
+			'post_type'   => $this->post_type,
+			'orderby'     => 'menu_order',
+			'order'       => 'ASC',
+			'numberposts' => -1,
+			'post_status' => 'any',
+		) );
 
-		if ( ! $legacy_dir ) {
-			return array(
-				'version'   => self::VERSION,
-				'config'    => array( 'tabs' => array(), 'include_general' => true, 'include_other' => true ),
-				'templates' => array(),
-			);
+		// Group by parent.
+		$by_parent = array();
+		foreach ( $all as $post ) {
+			$by_parent[ $post->post_parent ][] = $post;
 		}
 
-		$template_dir = trailingslashit( $legacy_dir ) . 'templates/';
-		$config_path  = $template_dir . 'config.json';
+		// Walk tree: parent → children → next parent.
+		$sorted = array();
+		$this->walk_tree( $by_parent, 0, $sorted );
 
-		$config = array(
-			'tabs'            => array(),
-			'include_general' => true,
-			'include_other'   => true,
-		);
-		$templates = array();
+		return $sorted;
+	}
 
-		// Legacy config.json → tab structure.
-		if ( file_exists( $config_path ) ) {
-			$json = json_decode( file_get_contents( $config_path ), true );
-			if ( is_array( $json ) && isset( $json['tabs'] ) ) {
-				$config['tabs'] = $json['tabs'];
-				if ( isset( $json['include_general'] ) ) {
-					$config['include_general'] = (bool) $json['include_general'];
-				}
-				if ( isset( $json['include_other'] ) ) {
-					$config['include_other'] = (bool) $json['include_other'];
-				}
-			}
+	/**
+	 * Recursive tree walker for hierarchical sort.
+	 */
+	private function walk_tree( &$by_parent, $parent_id, &$sorted ) {
+		if ( empty( $by_parent[ $parent_id ] ) ) {
+			return;
 		}
-
-		// Fallback: build tab list by scanning *.html if config.json was absent.
-		if ( empty( $config['tabs'] ) && is_dir( $template_dir ) ) {
-			$files = glob( $template_dir . '*.html' );
-			if ( $files ) {
-				foreach ( $files as $file ) {
-					$basename = basename( $file, '.html' );
-					if ( $basename === 'admin-guide' ) {
-						continue; // Intro file, not a tab.
-					}
-					$content = file_get_contents( $file );
-					$label   = ucwords( str_replace( array( '-', '_' ), ' ', $basename ) );
-					if ( preg_match( '/<h1[^>]*>(.+?)<\/h1>/i', $content, $m ) ) {
-						$label = strip_tags( trim( $m[1] ) );
-					}
-					$source = 'custom';
-					if ( post_type_exists( $basename ) ) {
-						$source = 'post_type';
-					} elseif ( taxonomy_exists( $basename ) ) {
-						$source = 'taxonomy';
-					}
-					$config['tabs'][] = array(
-						'slug'   => $basename,
-						'label'  => $label,
-						'source' => $source,
-					);
-				}
-			}
+		foreach ( $by_parent[ $parent_id ] as $post ) {
+			$sorted[] = $post;
+			$this->walk_tree( $by_parent, $post->ID, $sorted );
 		}
+	}
 
-		// Load all template *.html files found (including admin-guide intro).
-		if ( is_dir( $template_dir ) ) {
-			foreach ( glob( $template_dir . '*.html' ) as $file ) {
-				$slug = basename( $file, '.html' );
-				$templates[ $slug ] = file_get_contents( $file );
-			}
-		}
+	/**
+	 * Get a guide post by slug.
+	 */
+	private function get_guide_by_slug( $slug ) {
+		$posts = get_posts( array(
+			'post_type'   => $this->post_type,
+			'name'        => sanitize_key( $slug ),
+			'numberposts' => 1,
+			'post_status' => 'any',
+		) );
 
-		return array(
-			'version'   => self::VERSION,
-			'config'    => $config,
-			'templates' => $templates,
-		);
+		return $posts ? $posts[0] : null;
 	}
 
 	/**

@@ -26,14 +26,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Plugin {
 
-	/** Text domain shared across all instances of the package. */
-	const TEXT_DOMAIN = 'binary-wp-admin-guide';
-
 	/** @var Plugin[] prefix => instance */
 	private static $instances = array();
-
-	/** @var bool Guard so textdomain is loaded once per request regardless of instance count. */
-	private static $textdomain_loaded = false;
 
 	/** @var Context */
 	public $context;
@@ -74,33 +68,7 @@ class Plugin {
 		$instance        = new self( $context );
 		self::$instances[ $prefix ] = $instance;
 
-		// Register textdomain loader on `init` (required from WP 6.7+).
-		if ( ! self::$textdomain_loaded ) {
-			self::$textdomain_loaded = true;
-			add_action( 'init', array( __CLASS__, 'load_textdomain' ), 1 );
-		}
-
 		return $instance;
-	}
-
-	/**
-	 * Load the shared text domain from the package's languages/ directory.
-	 *
-	 * Runs once per request regardless of how many instances are booted.
-	 */
-	public static function load_textdomain() {
-		$first = self::first();
-		if ( ! $first ) {
-			return;
-		}
-		$mo_dir = $first->context->package_path . 'languages/';
-		$locale = determine_locale();
-		$locale = apply_filters( 'plugin_locale', $locale, self::TEXT_DOMAIN );
-		$mo     = $mo_dir . self::TEXT_DOMAIN . '-' . $locale . '.mo';
-
-		if ( file_exists( $mo ) ) {
-			load_textdomain( self::TEXT_DOMAIN, $mo );
-		}
 	}
 
 	/**
@@ -138,12 +106,48 @@ class Plugin {
 	// ── Constructor: wires the component graph ─────────────────────────
 
 	private function __construct( Context $context ) {
-		$this->context      = $context;
+		$this->context = $context;
+
+		// Register the guide page CPT.
+		add_action( 'init', array( $this, 'register_post_type' ) );
+
 		$this->placeholders = new Placeholders( $context );
 		$this->integrations = new Integrations( $context );
 		$this->placeholders->set_integrations( $this->integrations );
 		$this->config       = new Config( $context, $this->integrations );
 		$this->generator    = new Generator( $context, $this->config, $this->placeholders );
 		$this->admin        = new Admin( $context, $this->config, $this->generator, $this->placeholders, $this->integrations );
+	}
+
+	/**
+	 * Register the guide_page CPT.
+	 * Prefixed per-instance to support multiple instances.
+	 */
+	public function register_post_type() {
+		$slug = $this->context->prefix . '_guide_page';
+
+		if ( post_type_exists( $slug ) ) {
+			return;
+		}
+
+		register_post_type( $slug, array(
+			'labels'       => array(
+				'name'          => 'Guide Pages',
+				'singular_name' => 'Guide Page',
+			),
+			'public'       => false,
+			'show_ui'      => false,
+			'show_in_menu' => false,
+			'hierarchical' => true,
+			'supports'     => array( 'title', 'editor', 'page-attributes', 'revisions' ),
+			'show_in_rest' => true,
+		) );
+	}
+
+	/**
+	 * Get the CPT slug for this instance.
+	 */
+	public function get_post_type() {
+		return $this->context->prefix . '_guide_page';
 	}
 }
