@@ -7,12 +7,13 @@
  *
  *   use BinaryWP\AdminGuide\Plugin;
  *
+ *   // Minimal — paths auto-detected:
+ *   Plugin::boot( 'hfp' );
+ *
+ *   // With overrides:
  *   Plugin::boot( 'hfp', array(
- *       'package_path'    => __DIR__ . '/vendor/binary-wp/admin-guide/',
- *       'package_url'     => plugin_dir_url( __FILE__ ) . 'vendor/binary-wp/admin-guide/',
- *       'package_version' => '0.1.0',
- *       'guide_dir'       => __DIR__ . '/guide/',
- *       'menu'            => array( 'viewer_label' => 'Admin Guide' ),
+ *       'guide_dir' => __DIR__ . '/guide/',
+ *       'menu'      => array( 'parent' => 'tools.php' ),
  *   ) );
  *
  *   Plugin::get( 'hfp' )->config->get_tabs();
@@ -56,7 +57,7 @@ class Plugin {
 	 * @param array  $args   Context args. See Context::__construct().
 	 * @return Plugin
 	 */
-	public static function boot( $prefix, array $args = array() ) {
+	public static function boot( $prefix = 'admin_guide', array $args = array() ) {
 		$prefix = Context::sanitize_prefix( $prefix );
 
 		if ( isset( self::$instances[ $prefix ] ) ) {

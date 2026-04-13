@@ -48,8 +48,8 @@ class Context {
 	/**
 	 * @param array $args {
 	 *     @type string   $prefix            Required. Instance identifier.
-	 *     @type string   $package_path      Required. Path to package root.
-	 *     @type string   $package_url       Required. URL to package root.
+	 *     @type string   $package_path      Optional. Path to package root. Auto-detected from src/ location.
+	 *     @type string   $package_url       Optional. URL to package root. Auto-detected via plugins_url() or theme URI.
 	 *     @type string   $package_version   Optional. Default '1.0'.
 	 *     @type string   $guide_dir         Optional. Output dir; auto-detected if omitted.
 	 *     @type string   $legacy_guide_dir  Optional. Legacy templates dir for migration.
@@ -61,8 +61,8 @@ class Context {
 	public function __construct( array $args ) {
 		$this->raw_args          = $args;
 		$this->prefix            = self::sanitize_prefix( isset( $args['prefix'] ) ? $args['prefix'] : '' );
-		$this->package_path      = trailingslashit( isset( $args['package_path'] ) ? $args['package_path'] : '' );
-		$this->package_url       = trailingslashit( isset( $args['package_url'] ) ? $args['package_url'] : '' );
+		$this->package_path      = trailingslashit( isset( $args['package_path'] ) ? $args['package_path'] : dirname( __DIR__ ) . '/' );
+		$this->package_url       = trailingslashit( isset( $args['package_url'] ) ? $args['package_url'] : $this->detect_package_url() );
 		$this->package_version   = isset( $args['package_version'] ) ? (string) $args['package_version'] : '1.0';
 		$this->guide_dir         = trailingslashit( isset( $args['guide_dir'] ) ? $args['guide_dir'] : $this->detect_guide_dir() );
 		$this->legacy_guide_dir  = trailingslashit( isset( $args['legacy_guide_dir'] ) ? $args['legacy_guide_dir'] : '' );
@@ -124,6 +124,35 @@ class Context {
 		$prefix = preg_replace( '/[^a-z0-9_]/', '_', $prefix );
 		$prefix = trim( $prefix, '_' );
 		return $prefix ?: 'admin_guide';
+	}
+
+	/**
+	 * Fallback URL resolution from package_path.
+	 * Works for plugins (via plugins_url) and themes (via get_stylesheet_directory_uri).
+	 */
+	private function detect_package_url() {
+		$pkg = rtrim( str_replace( '\\', '/', $this->package_path ), '/' );
+		if ( ! $pkg ) {
+			return '';
+		}
+
+		if ( defined( 'WP_PLUGIN_DIR' ) && function_exists( 'plugins_url' ) ) {
+			$plugin_root = rtrim( str_replace( '\\', '/', WP_PLUGIN_DIR ), '/' );
+			if ( $plugin_root && strpos( $pkg, $plugin_root . '/' ) === 0 ) {
+				$relative = substr( $pkg, strlen( $plugin_root ) + 1 );
+				return plugins_url( $relative ) . '/';
+			}
+		}
+
+		if ( function_exists( 'get_stylesheet_directory' ) && function_exists( 'get_stylesheet_directory_uri' ) ) {
+			$theme_root = rtrim( str_replace( '\\', '/', get_stylesheet_directory() ), '/' );
+			if ( $theme_root && strpos( $pkg, $theme_root . '/' ) === 0 ) {
+				$relative = substr( $pkg, strlen( $theme_root ) + 1 );
+				return get_stylesheet_directory_uri() . '/' . $relative . '/';
+			}
+		}
+
+		return '';
 	}
 
 	/**

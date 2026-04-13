@@ -37,10 +37,17 @@ In your plugin/theme main file, boot an instance **before** `admin_menu`:
 ```php
 use BinaryWP\AdminGuide\Plugin;
 
+// Minimal — package_path/url auto-detected from vendor location:
+Plugin::boot( 'my_prefix' );
+```
+
+All options are optional. Full example with overrides:
+
+```php
 Plugin::boot( 'my_prefix', [
     'package_path'    => __DIR__ . '/vendor/binary-wp/admin-guide/',
     'package_url'     => plugin_dir_url( __FILE__ ) . 'vendor/binary-wp/admin-guide/',
-    'package_version' => '0.3.0',
+    'package_version' => '0.4.0',
     'guide_dir'       => __DIR__ . '/guide/',
     'capability'      => 'manage_options',
     'menu'            => [
@@ -51,6 +58,8 @@ Plugin::boot( 'my_prefix', [
     'integrations_dirs' => [ __DIR__ . '/my-integrations/' ],
 ] );
 ```
+
+Auto-detection: `package_path` defaults to the package's own directory. `package_url` is resolved via `plugins_url()` or theme URI. `guide_dir` falls back to the nearest plugin/theme root + `/guide/`.
 
 Your instance prefix (`'my_prefix'`) scopes all CPT slugs, AJAX actions, nonces, asset handles, and admin page slugs so multiple instances can coexist.
 
@@ -117,6 +126,56 @@ Each directory is scanned for `*.json` integration files. Each JSON defines:
 
 Render functions live in `functions/{slug}.php` alongside the JSON files.
 
+### Example: custom integration JSON
+
+Create `guide-integrations/my-crm.json`:
+
+```json
+{
+    "slug": "my-crm",
+    "name": "My CRM",
+    "prefix": "my_crm",
+    "requires": { "plugin": "my-crm/my-crm.php" },
+    "settings_url": "admin.php?page=my-crm-settings",
+    "docs_url": "https://example.com/docs/",
+    "external": [
+        {
+            "service": "API Connection",
+            "description": "CRM sync status",
+            "check": "my_crm_api"
+        }
+    ],
+    "tab_templates": [
+        { "slug": "my-crm-overview", "label": "My CRM Overview" }
+    ],
+    "placeholders": {
+        "{{my_crm_sync_status}}": {
+            "callback": "guide_render_my_crm_sync_status",
+            "description": "Current CRM sync status"
+        },
+        "{{my_crm_settings_link}}": {
+            "type": "settings_link",
+            "url": "admin.php?page=my-crm-settings",
+            "label": "CRM Settings",
+            "description": "Link to CRM settings page"
+        }
+    }
+}
+```
+
+Then create `guide-integrations/functions/my-crm.php` with the render callback:
+
+```php
+function guide_render_my_crm_sync_status() {
+    $last_sync = get_option( 'my_crm_last_sync' );
+    return $last_sync
+        ? sprintf( 'Last sync: %s', human_time_diff( $last_sync ) . ' ago' )
+        : 'Not synced yet';
+}
+```
+
+The integration auto-detects when `my-crm/my-crm.php` is active — its placeholders and tab templates appear in the builder automatically.
+
 ## Exposed API
 
 ```php
@@ -175,7 +234,7 @@ xgettext \
   --keyword=_x:1,2c --keyword=esc_html_x:1,2c \
   --keyword=_n:1,2 --keyword=_nx:1,2,4c \
   --copyright-holder='BinaryWP' \
-  --package-name='Admin Guide' --package-version='0.3.0' \
+  --package-name='Admin Guide' --package-version='0.4.0' \
   --msgid-bugs-address='https://github.com/binary-wp/admin-guide/issues' \
   --add-comments=translators: \
   --output=languages/binary-wp-admin-guide.pot \

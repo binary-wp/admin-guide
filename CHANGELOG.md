@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0 — 2026-04-13
+
+### Added
+- **Integration example** in README — complete walkthrough for creating custom integration JSON + PHP callback.
+- **GitHub Actions** — Packagist auto-update workflow triggered on published releases.
+- `CLAUDE.md` — project context for AI-assisted development.
+
+### Fixed
+- POT file version bumped from stale 0.2.0 to match release.
+
 ## 0.3.0 — 2026-04-13
 
 ### Added
