@@ -1,3 +1,7 @@
 /vendor/
 /composer.lock
 .DS_Store
+
+# Private docs — live on `private` branch only
+docs/ROADMAP.md
+docs/COMPETITIVE-ANALYSIS.md
