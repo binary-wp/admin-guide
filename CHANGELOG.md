@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.1 — 2026-04-13
+
+### Added
+- `docs/FEATURES.md` — complete feature inventory with unique differentiators
+- `docs/COMPETITIVE-ANALYSIS.md` — comparison matrix vs WP Help, Admin Help Docs, WP Admin Pages PRO
+- `docs/ROADMAP.md` — free/PRO tier split, 5-phase implementation plan, PRO package architecture
+
 ## 0.6.0 — 2026-04-13
 
 ### Added
