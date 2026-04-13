@@ -1,6 +1,6 @@
 # Admin Guide
 
-JSON-driven admin guide builder for WordPress. Lets you build an in-dashboard user manual from reusable tabs and live placeholders, with a TinyMCE editor, JSON import/export, and per-instance prefix isolation so multiple hosts can bundle it side-by-side.
+Admin guide builder for WordPress with hierarchical CPT storage, drag & drop nav-menu style builder, WYSIWYG editor with placeholder pills, JSON-driven integration registry, and per-instance prefix isolation so multiple hosts can bundle it side-by-side.
 
 Works **three ways**:
 
@@ -40,52 +40,112 @@ use BinaryWP\AdminGuide\Plugin;
 Plugin::boot( 'my_prefix', [
     'package_path'    => __DIR__ . '/vendor/binary-wp/admin-guide/',
     'package_url'     => plugin_dir_url( __FILE__ ) . 'vendor/binary-wp/admin-guide/',
-    'package_version' => '0.1.0',
+    'package_version' => '0.3.0',
     'guide_dir'       => __DIR__ . '/guide/',
+    'capability'      => 'manage_options',
     'menu'            => [
-        'parent'        => '',              // empty = top-level menu
-        'builder_label' => 'Admin Guide',
+        'parent'        => 'tools.php',     // or your own top-level slug, or '' for standalone
+        'viewer_label'  => 'Admin Guide',
+        'builder_label' => 'Guide Builder',
     ],
+    'integrations_dirs' => [ __DIR__ . '/my-integrations/' ],
 ] );
 ```
 
-Your instance prefix (`'my_prefix'`) scopes all `wp_option` keys, AJAX actions, nonces, asset handles, and admin page slugs so multiple instances can coexist.
+Your instance prefix (`'my_prefix'`) scopes all CPT slugs, AJAX actions, nonces, asset handles, and admin page slugs so multiple instances can coexist.
+
+## How it works
+
+### Storage
+
+Guide pages are stored as a **hierarchical custom post type** (`{prefix}_guide_page`):
+
+| Field | Usage |
+|---|---|
+| `post_title` | Tab label |
+| `post_name` | Tab slug |
+| `post_content` | HTML template with `{{placeholders}}` |
+| `post_parent` | Hierarchy (0 = top-level, >0 = child) |
+| `menu_order` | Sort position |
+| `_guide_source` meta | `system` / `post_type` / `taxonomy` / `platform` / `custom` |
+| `_guide_group` meta | `1` = group-only tab (no own content, shows first child) |
+
+Benefits: revisions, REST API, standard WP queries, native WP export.
+
+### Builder page
+
+Nav-menu style drag & drop sortable with depth management (max 1 level deep). Matches WP core menu editor look and feel. Sidebar with metaboxes for adding system guides (from integrations) and custom guides.
+
+### Editor page
+
+Standalone TinyMCE with placeholder palette sidebar. Click to insert or drag & drop placeholders into the editor. Placeholders render as non-editable pills in the editor and are stored as `{{tokens}}` in the database.
+
+### Output generation
+
+On every save, the generator:
+
+1. Queries all published `{prefix}_guide_page` posts
+2. Resolves `{{placeholders}}` via PHP callbacks
+3. Writes `.html` snapshots to `guide/html/` (for fast admin rendering)
+4. Writes `.md` copies to `guide/` (portable reading, via `league/html-to-markdown`)
+
+### Display
+
+The host renders the guide viewer with:
+
+- Top-level tabs as horizontal `nav-tab-wrapper`
+- Children as inline sub-navigation (WooCommerce-style `subsubsub`)
+- Group-only tabs auto-fall through to first child content
 
 ## Per-host integrations
 
-Ship your own JSON integration definitions alongside the package by passing extra directories at boot:
+Ship your own JSON integration definitions alongside the package:
 
 ```php
 Plugin::boot( 'my_prefix', [
     'integrations_dirs' => [ __DIR__ . '/guide-integrations/' ],
-    // …
+    // ...
 ] );
 ```
 
-Each extra directory is scanned for `*.json` integration files, with optional `functions/` and `templates/` subdirectories alongside.
+Each directory is scanned for `*.json` integration files. Each JSON defines:
+
+- `name`, `slug`, `requires` (class/function/option checks for auto-detection)
+- `placeholders[]` with token, description, type, optional callback
+- `tab_templates[]` for auto-creating system tabs
+- `external_status` for live service status checks
+
+Render functions live in `functions/{slug}.php` alongside the JSON files.
 
 ## Exposed API
 
 ```php
 $plugin = \BinaryWP\AdminGuide\Plugin::get( 'my_prefix' );
 
-$plugin->config->get_tabs();                // [ slug => label ]
-$plugin->config->get_template( $slug );     // raw HTML
-$plugin->config->save_template( $slug, $html );
-$plugin->config->export();                  // bundle array
-$plugin->config->import( $bundle );         // true|WP_Error
+// Tabs
+$plugin->config->get_tabs();                   // [ slug => label ] (top-level)
+$plugin->config->get_children( $parent_slug ); // [ slug => label ] (children)
+$plugin->config->get_all_guides();             // full tree with depth
+$plugin->config->get_template( $slug );        // raw HTML content
+$plugin->config->add_tab( $slug, $label, $source );
+$plugin->config->remove_tab( $slug );
+$plugin->config->save_order( $items );         // [{ id, parent_id, position }]
 
-$plugin->generator->generate();             // regenerate guide/ output
-$plugin->generator->read_tab( $slug );      // rendered HTML
+// Import / Export
+$plugin->config->export();                     // JSON-serializable array
+$plugin->config->import( $bundle );            // true | WP_Error
+
+// Generator
+$plugin->generator->generate();                // regenerate all output files
+$plugin->generator->read_tab( $slug );         // rendered HTML for display
+$plugin->generator->remove_files( $slug );     // clean up generated files for a slug
 ```
 
 ## Hooks
 
-Filters (each also fires a prefix-scoped variant, e.g. `my_prefix/guide_builder/parent_menu`):
+Filters (each also fires a prefix-scoped variant, e.g. `my_prefix/guide_builder/guide_dir`):
 
-- `guide_builder/parent_menu` — parent menu slug for the builder page
 - `guide_builder/guide_dir` — output directory for generated files
-- `guide_builder/legacy_guide_dir` — legacy templates dir for one-shot migration
 - `guide_builder/system_tabs` — available system tab groups in the builder UI
 
 Actions:
@@ -95,22 +155,16 @@ Actions:
 
 ## Translations
 
-The package ships with a translation template (`languages/binary-wp-admin-guide.pot`) and a Czech translation (`cs_CZ`) out of the box. The text domain is `binary-wp-admin-guide` and is loaded automatically on `init` priority 1.
+The package ships with a translation template (`languages/binary-wp-admin-guide.pot`) and a Czech translation (`cs_CZ`). Text domain: `binary-wp-admin-guide`, loaded on `init` priority 1.
 
 To contribute a translation:
 
-1. Copy `languages/binary-wp-admin-guide.pot` to `languages/binary-wp-admin-guide-{locale}.po` (e.g. `fr_FR`, `de_DE`).
-2. Translate each `msgstr` in the `.po` file (use [Poedit](https://poedit.net/) or any PO editor).
-3. Compile to `.mo`:
-   ```bash
-   msgfmt --check --output-file=languages/binary-wp-admin-guide-{locale}.mo \
-          languages/binary-wp-admin-guide-{locale}.po
-   ```
-4. Submit a pull request against `main` with both `.po` and `.mo` files.
+1. Copy `languages/binary-wp-admin-guide.pot` to `languages/binary-wp-admin-guide-{locale}.po`
+2. Translate each `msgstr` (use [Poedit](https://poedit.net/) or any PO editor)
+3. Compile: `msgfmt --check --output-file=languages/binary-wp-admin-guide-{locale}.mo languages/binary-wp-admin-guide-{locale}.po`
+4. Submit a PR with both `.po` and `.mo` files
 
 ### Regenerating the `.pot` template
-
-After adding or modifying translatable strings in the source, regenerate the template:
 
 ```bash
 xgettext \
@@ -121,17 +175,11 @@ xgettext \
   --keyword=_x:1,2c --keyword=esc_html_x:1,2c \
   --keyword=_n:1,2 --keyword=_nx:1,2,4c \
   --copyright-holder='BinaryWP' \
-  --package-name='Admin Guide' --package-version='0.2.0' \
+  --package-name='Admin Guide' --package-version='0.3.0' \
   --msgid-bugs-address='https://github.com/binary-wp/admin-guide/issues' \
   --add-comments=translators: \
   --output=languages/binary-wp-admin-guide.pot \
   src/*.php integrations/functions/*.php admin-guide.php
-```
-
-Then merge the new template into existing `.po` files:
-
-```bash
-msgmerge --update languages/binary-wp-admin-guide-cs_CZ.po languages/binary-wp-admin-guide.pot
 ```
 
 ## License
