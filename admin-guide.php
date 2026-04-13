@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Admin Guide
  * Description: JSON-driven admin guide builder for WordPress. Install as a standalone plugin, or require as a Composer dependency from your own plugin/theme.
- * Version:     0.6.1
+ * Version:     0.6.2
  * Author:      BinaryWP
  * License:     MIT
  * Text Domain: binary-wp-admin-guide
@@ -62,7 +62,7 @@ add_action( 'plugins_loaded', function () {
 	\BinaryWP\AdminGuide\Plugin::boot( 'admin_guide', array(
 		'package_path'    => __DIR__ . '/',
 		'package_url'     => plugin_dir_url( __FILE__ ),
-		'package_version' => '0.6.1',
+		'package_version' => '0.6.2',
 		'menu'            => array(
 			// By default the viewer/builder installs under its own top-level item.
 			// Hosts can override via filter or by booting their own instance.

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.6.2 — 2026-04-13
+
+### Added
+- `docs/ROADMAP.md` — complete rewrite: linear versioned timeline (v0.7–v1.3), dependency ordering, `[FREE]`/`[PRO]`/`[LAUNCH]` badges, status tags
+- Placeholder engine design — token naming convention (`source__entity-view:scope:modifier`), output_type strong typing, dynamic/nested placeholders, URL transform layer
+- Integration layer design — `wp__edit`/`wp__tax` navigation, per-integration standard placeholders, availability checks, auto-generated guide pages
+- Pill UX design — color coding by output_type (WP admin palette), contextual actions, break/detach workflow
+- WordPress.org launch checklist — readme.txt, screenshots, landing page, docs, marketing
+- Free/PRO business model analysis — distribution variants, license platforms, feature gating, pricing
+
+### Changed
+- `docs/COMPETITIVE-ANALYSIS.md` — version updated to v0.6.2, feature matrix validated
+
 ## 0.6.1 — 2026-04-13
 
 ### Added

@@ -8,7 +8,7 @@
 |---|---|---|---|---|
 | Price | Free (Composer) | Free | Free | $79–149 |
 | Installs | New | 10,000+ | 400+ | Premium only |
-| Status | Active (v0.6.0) | Stagnant (2024) | Active (2026) | Active |
+| Status | Active (v0.6.2) | Stagnant (2024) | Active (2026) | Active |
 | Target | Developers | End users | End users / agencies | Agencies |
 
 ## Competitor Profiles
