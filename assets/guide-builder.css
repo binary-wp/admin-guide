@@ -12,9 +12,19 @@
 	margin-top: 15px;
 }
 
+.guide-builder-sidebar {
+	width: 280px;
+	flex-shrink: 0;
+}
+
 .guide-builder-main {
 	flex: 1;
 	min-width: 0;
+}
+
+/* Builder page: limit main column width for readability. */
+.nav-menus-php .guide-builder-main {
+	max-width: 800px;
 }
 
 .guide-builder-main > h2 {
@@ -23,11 +33,6 @@
 
 .guide-builder-main > hr {
 	margin: 25px 0 20px;
-}
-
-.guide-builder-sidebar {
-	width: 300px;
-	flex-shrink: 0;
 }
 
 /* ── Nav-menu sortable overrides ─────────────────────────────────────── */
@@ -89,6 +94,13 @@
 .guide-builder-sidebar .postbox .inside {
 	margin: 0;
 	padding: 10px 12px;
+}
+
+/* ── Editor Page ────────────────────────────────────────────────────── */
+
+/* Editor main column should use full available width (no 800px cap). */
+#guide_content_ifr {
+	min-height: 500px;
 }
 
 /* ── Editor Page: Meta Fields ────────────────────────────────────────── */

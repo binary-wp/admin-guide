@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.5.0 — 2026-04-13
+
+### Added
+- **Three-page admin UI** — Builder, Instructions, Settings & Tools as sub-pages with shared `nav-tab-wrapper` navigation.
+- **Instructions page** — usage guide (templates, placeholders, hierarchy, editor) + full integration registry showing status, system guide pages, external checks, and placeholder tables per integration.
+- **Settings & Tools page** — import/export moved here from builder, plus Guide Info panel (output dir, page counts, active integrations, prefix, version).
+- **Astra integration** — `{{astra_color_palette}}` renders global color swatches with CSS variable names; `{{astra_typography}}` renders body + heading font settings.
+- `integrations/functions/astra.php` — render functions for Astra theme colors and typography.
+- Host-registered placeholders section on Instructions page for placeholders outside integration JSONs.
+
+### Changed
+- **Layout** — sidebar moved to left on both builder and editor pages. Builder main column capped at 800px.
+- Import redirect now points to Settings & Tools page.
+- `pp_authors_people_link` renamed to `pp_authors_listing_link` — "People" relabeling is host-specific (HFP), not generic.
+
+### Fixed
+- Host-registered placeholder detection — tokens already include `{{}}` braces, no longer double-wrapped.
+
 ## 0.4.0 — 2026-04-13
 
 ### Added

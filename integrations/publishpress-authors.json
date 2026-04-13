@@ -6,11 +6,11 @@
 	"settings_url": "admin.php?page=ppma-modules-settings",
 	"docs_url": "https://publishpress.com/knowledge-base/",
 	"placeholders": {
-		"{{pp_authors_people_link}}": {
+		"{{pp_authors_listing_link}}": {
 			"type": "settings_link",
 			"url": "edit-tags.php?taxonomy=author",
-			"label": "People",
-			"description": "Link to People (authors) admin listing"
+			"label": "Authors",
+			"description": "Link to Authors taxonomy admin listing"
 		},
 		"{{pp_authors_categories_link}}": {
 			"type": "settings_link",

@@ -11,7 +11,7 @@ Works as standalone plugin, or as Composer dependency in a plugin/theme with per
 - `src/` — PSR-4 namespace `BinaryWP\AdminGuide\`
   - `Plugin.php` — boot + singleton registry
   - `Config.php` — CPT-based tab storage (CRUD, import/export)
-  - `Admin.php` — admin pages (builder, editor, viewer)
+  - `Admin.php` — admin pages (builder, editor, instructions, settings & tools)
   - `Generator.php` — renders placeholders → writes `.html` + `.md` snapshots
   - `Integrations.php` — loads JSON integration files from dirs
   - `Placeholders.php` — placeholder registry + resolution
