@@ -155,11 +155,43 @@ Foundation — defines the format all other items use.
   
   This decouples token naming from WordPress URL internals — tokens stay stable even if WP changes URL patterns in future versions.
 
+  > **Spin-off potential #1: `binary-wp/admin-urls`** — The admin URL builder (whitelist + alias registry + WP registry lookups + human-readable keys) is a self-contained utility with value beyond the guide plugin. A universal "friendly admin URL API" for WordPress developers. Keep the implementation modular enough to allow extraction later.
+
+  > **Spin-off potential #2: `binary-wp/placeholders`** — The placeholder engine (token registry, parametric resolver, nested resolution, output_type typing, pill UI) is not admin-guide-specific. It's a generic `{{token}}` → resolved HTML system. Keep decoupled from guide-specific logic (Admin, Config CPT) so extraction is possible.
+  >
+  > **Native syntax:** `{{token}}` stays — cleaner parametric format than `[shortcodes]`, no collision with WP shortcodes or markdown `[]`, better nesting than WP core.
+  >
+  > **Bridge targets** — the engine can resolve content from any registered WP system:
+  > | Target | Syntax | How it works |
+  > |---|---|---|
+  > | **Own API** | `{{source__entity-view:scope}}` | Native — our registry, our resolver |
+  > | **WP Shortcodes** | `{{wp__shortcode:gallery:ids=1,2,3}}` | Bridge wraps `do_shortcode('[gallery ids="1,2,3"]')` — any registered shortcode becomes a typed pill |
+  > | **WP Widgets** | `{{wp__widget:search}}`, `{{wp__widget:recent-posts:count=5}}` | Bridge calls `the_widget()` (core since WP 2.8) — renders any registered widget inline, no sidebar needed |
+  > | **Gutenberg Blocks** | `{{wp__block:core/latest-posts:count=5}}` | Bridge calls `render_block()` — server-side rendered blocks become pills in Classic Editor |
+  >
+  > **Editor adapters** — same resolver, multiple frontends:
+  > | Platform | Adapter |
+  > |---|---|
+  > | TinyMCE (Classic Editor) | Pill UI — `contenteditable=false` spans (current) |
+  > | Gutenberg | Custom block with pill preview + token storage in block attributes |
+  > | Elementor | Dynamic tag or widget wrapping the resolver |
+  > | WP Text Widget | `the_content` filter with resolver pass |
+  >
+  > This is a standalone product play: "dynamic content pills for WordPress" — brings Gutenberg-style dynamic blocks to Classic Editor, Elementor, widgets, anywhere. Millions of Classic Editor installs, zero competition in this space.
+
 ### 2. output_type strong typing
 
 Depends on: naming convention (view segment = output_type).
 
 - [ ] `[FREE]` **`output_type` field in placeholder registry** — canonical type, derived from the `view` segment in the token name. Drives pill color, editor behavior, and rendering. Set explicitly via JSON `type` or inferred from token name.
+- [ ] `[FREE]` **Inline vs block display** — derived from output_type. Affects both pill rendering in editor and HTML resolve behavior:
+  | output_type | Display | Resolver behavior |
+  |---|---|---|
+  | `info`, `link`, `status` | **inline** | Replace token in-place, no wrapping. Can live inside `<p>`. |
+  | `image`, `list`, `table`, `section` | **block** | Replace `<p>{{token}}</p>` with block HTML (current behavior). Cannot nest in `<p>`. |
+  Currently all pills resolve as block (`\n\n...\n\n`). Inline types need to stay within the text flow — resolver must detect context.
+  
+  Note: `status` is inline (single service check → badge/icon). The current `{{*_external_status}}` block placeholder is actually a `section` containing multiple status checks — will be reclassified as `service-section` or similar compound type in v0.9.
 
 ### 3. Dynamic placeholders (parser)
 
@@ -533,11 +565,27 @@ Before any code: decide HOW the split works. This is architectural — affects p
 - Tiered: Personal (1 site), Business (5 sites), Agency (unlimited) — standard WP plugin pattern
 - What's free vs what's PRO is defined in this roadmap — but the exact line may shift based on user feedback
 
+**Integrations API as PRO boundary — early idea, not resolved:**
+- The JSON-driven integrations system (auto-detect, placeholders, tab templates, external status) could be the main PRO differentiator
+- Free version would still *interpret* integrations — the engine stays free, but *registering* new integrations (JSON API, `integrations_dirs`, hook-based registration) would require PRO
+- This means: free ships with a curated set of bundled integrations (e.g. WooCommerce, Elementor), PRO unlocks the ability to add custom ones + access to premium integration packs
+- Complication: the current architecture doesn't distinguish "bundled" from "custom" integrations at runtime — both go through the same pipeline. Would need a gating layer in `Integrations::ensure_discovered()` or at the hook level
+- Alternative B: free allows unlimited integrations but locks specific *features within* integrations (e.g. external status checks, auto-generated guide pages are PRO; basic placeholders and tab templates are free)
+- Alternative C: API stays fully open and free (devs can build anything), but **ready-made integration packs are PRO** (WooCommerce, Gravity Forms, WPML, etc.). Free ships with basic WordPress core integration only. Revenue comes from saving people time, not from gating the engine. This is the "WordPress model" — core is free, ecosystem monetizes.
+- **Regardless of variant: granulace must be per-integration, not global.** User may have 5 free integrations and 3 paid ones active at the same time. The gating layer must work at integration level, not as a single PRO toggle. Example scenario:
+  - `wordpress` (bundled, free) — 10 placeholders, all work
+  - `woocommerce` (PRO pack) — 8 placeholders, 2 status checks, auto-guide page — all locked until licensed
+  - `astra` (PRO pack) — 3 placeholders — locked
+  - `my-custom` (dev-built, free API) — unlimited, always works
+- This means the integration JSON needs a `license` or `tier` field, and `Integrations::register_placeholders()` must check it before registering. Palette shows locked integrations grayed out with "PRO" badge and upsell link.
+- This is a fundamental product decision — affects what the free version feels like to use. Needs more thought.
+
 **Open questions:**
 - Do we want Freemius analytics (usage tracking, deactivation feedback) or is that too invasive?
 - Composer-only distribution or must we also support manual zip install for non-developers?
 - Do we self-host a sales site (binarywp.com) or use a marketplace (Freemius, CodeCanyon)?
 - How do we handle grace periods when a license expires — degrade gracefully or hard-lock PRO features?
+- Where exactly is the integrations API boundary? (see above)
 
 ### 1. License system
 
