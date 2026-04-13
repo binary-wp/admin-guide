@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0 — 2026-04-13
+
+### Added
+- **Version reconciliation** — fixed version numbering after parallel development sessions caused v0.4.0/v0.5.0 overlap.
+
+### Note
+This release combines v0.4.0 (zero-config boot, integration example, Packagist CI) and v0.5.0 (three-page UI, Astra integration) into a single clean release.
+
 ## 0.5.0 — 2026-04-13
 
 ### Added
