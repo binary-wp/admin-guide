@@ -157,7 +157,7 @@ Foundation — defines the format all other items use.
 
   > **Spin-off potential #1: `binary-wp/admin-urls`** — The admin URL builder (whitelist + alias registry + WP registry lookups + human-readable keys) is a self-contained utility with value beyond the guide plugin. A universal "friendly admin URL API" for WordPress developers. Keep the implementation modular enough to allow extraction later.
 
-  > **Spin-off potential #2: `binary-wp/placeholders`** — The placeholder engine (token registry, parametric resolver, nested resolution, output_type typing, pill UI) is not admin-guide-specific. It's a generic `{{token}}` → resolved HTML system. Keep decoupled from guide-specific logic (Admin, Config CPT) so extraction is possible.
+  > **Spin-off potential #2: `binary-wp/placeholders`** — Product name candidates: **"Better Shortcodes"**, **"Better Widgets"**, **"Content Pills"**, **"Dynamic Pills"**, **"WP Tokens"**. The placeholder engine (token registry, parametric resolver, nested resolution, output_type typing, pill UI) is not admin-guide-specific. It's a generic `{{token}}` → resolved HTML system. Keep decoupled from guide-specific logic (Admin, Config CPT) so extraction is possible.
   >
   > **Native syntax:** `{{token}}` stays — cleaner parametric format than `[shortcodes]`, no collision with WP shortcodes or markdown `[]`, better nesting than WP core.
   >
