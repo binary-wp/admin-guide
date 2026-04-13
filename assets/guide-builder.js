@@ -168,22 +168,39 @@
 			}
 		});
 
-		// Remove.
-		$sortable.on('click', '.item-delete', function (e) {
+		// Remove — two-click pattern: first click shows "confirm?", second deletes.
+		$sortable.on('click', '.guide-item-delete', function (e) {
 			e.preventDefault();
 			e.stopPropagation();
-			var $li = $(this).closest('li');
-			var id = $(this).data('id');
-			if (!confirm('Remove this guide and its children?')) return;
+			var $link = $(this);
+			var $li   = $link.closest('li');
+			var id    = $link.data('id');
 
+			// First click: ask for confirmation inline.
+			if (!$link.data('confirming')) {
+				$link.data('confirming', true).text('Confirm removal').css('color', '#b32d2e');
+				setTimeout(function () {
+					$link.data('confirming', false).text('Remove').css('color', '');
+				}, 4000);
+				return;
+			}
+
+			// Second click: proceed with deletion.
+			$link.text('Removing…');
 			$.post(guideBuilder.ajaxUrl, {
 				action: guideBuilder.actions.remove_guide,
 				nonce: guideBuilder.nonce,
 				id: id
-			}, function (response) {
+			}).done(function (response) {
 				if (response.success) {
 					$li.fadeOut(200, function () { $(this).remove(); });
+				} else {
+					console.error('[GuideBuilder] remove error:', response.data);
+					$link.text('Error — try again').css('color', '#b32d2e');
 				}
+			}).fail(function (xhr) {
+				console.error('[GuideBuilder] remove AJAX failed:', xhr.status, xhr.statusText);
+				$link.text('Failed — try again').css('color', '#b32d2e');
 			});
 		});
 
@@ -243,7 +260,7 @@
 			+ '<div class="menu-item-actions description-wide submitbox">'
 			+ '<a class="item-edit-link" href="' + editUrl + '">Edit Content</a>'
 			+ '<span class="meta-sep"> | </span>'
-			+ '<a class="item-delete submitdelete deletion" href="#" data-id="' + id + '">Remove</a>'
+			+ '<a class="guide-item-delete submitdelete deletion" href="#" data-id="' + id + '">Remove</a>'
 			+ '</div></div>'
 			+ '<ul class="menu-item-transport"></ul></li>');
 	}

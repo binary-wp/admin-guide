@@ -199,7 +199,7 @@ class Admin {
 									<div class="menu-item-actions description-wide submitbox">
 										<a class="item-edit-link" href="<?php echo esc_url( $edit_url ); ?>">Edit Content</a>
 										<span class="meta-sep"> | </span>
-										<a class="item-delete submitdelete deletion" href="#" data-id="<?php echo (int) $guide['id']; ?>">Remove</a>
+										<a class="guide-item-delete submitdelete deletion" href="#" data-id="<?php echo (int) $guide['id']; ?>">Remove</a>
 									</div>
 								</div>
 								<ul class="menu-item-transport"></ul>
