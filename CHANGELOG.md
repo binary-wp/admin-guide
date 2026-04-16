@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.7.0 — 2026-04-16
+
+### Added
+- **`Viewer` class** (`src/Viewer.php`) — new read-only admin page that renders
+  the assembled guide to end-user roles. Horizontal `nav-tab-wrapper` for
+  top-level tabs, WooCommerce-style `.subsubsub` for children, generated HTML
+  body underneath. Regenerate button rebuilds snapshots on demand.
+- Viewer URL: `?page={prefix}-admin-guide-viewer` (uses `Context::page_slug('viewer')`).
+- Regenerate handler on `admin_post_{prefix}_admin_guide_regenerate_viewer`.
+- `menu.viewer_label` boot arg is now honoured (was previously a no-op).
+- `menu.builder_label` boot arg is now honoured (was previously a no-op).
+- `menu.viewer` boot arg (bool) — set to `false` to skip registering the
+  viewer submenu; useful for hosts that already roll their own.
+
+### Changed
+- `Plugin::__construct` instantiates the new `Viewer` by default (opt-out via
+  `menu.viewer = false`). Hosts that upgrade from 0.6.x gain a new "Admin
+  Guide" submenu automatically — no API change, pure addition.
+
+### Backward compatibility
+- No breaking changes. Hosts on 0.6.x continue to work as-is after composer
+  update. The only user-facing difference is the new submenu; hosts that
+  already shipped their own viewer should either drop it (preferred) or set
+  `menu.viewer => false` to keep their implementation.
+
 ## 0.6.2 — 2026-04-13
 
 ### Added

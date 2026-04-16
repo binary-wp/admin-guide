@@ -56,6 +56,10 @@ class Context {
 	 *     @type string   $capability        Optional. Default 'manage_options'.
 	 *     @type string[] $integrations_dirs Optional. Extra JSON integration dirs.
 	 *     @type array    $menu              Optional. Menu placement defaults.
+	 *                                       Keys:
+	 *                                         - parent (string)        parent menu slug (default tools.php)
+	 *                                         - viewer_label (string)  Admin Guide viewer submenu label (default 'Admin Guide')
+	 *                                         - viewer (bool)          false to skip registering the Viewer submenu (default true)
 	 * }
 	 */
 	public function __construct( array $args ) {

@@ -48,6 +48,9 @@ class Plugin {
 	/** @var Admin */
 	public $admin;
 
+	/** @var Viewer|null  null when opted out via menu.viewer = false */
+	public $viewer;
+
 	// ── Boot / Registry ─────────────────────────────────────────────────
 
 	/**
@@ -118,6 +121,13 @@ class Plugin {
 		$this->config       = new Config( $context, $this->integrations );
 		$this->generator    = new Generator( $context, $this->config, $this->placeholders );
 		$this->admin        = new Admin( $context, $this->config, $this->generator, $this->placeholders, $this->integrations );
+
+		// Viewer — end-user read-only surface. Opt out via menu.viewer = false.
+		$menu            = $context->menu_defaults;
+		$viewer_enabled  = ! isset( $menu['viewer'] ) || false !== $menu['viewer'];
+		if ( $viewer_enabled ) {
+			$this->viewer = new Viewer( $context, $this->config, $this->generator );
+		}
 	}
 
 	/**

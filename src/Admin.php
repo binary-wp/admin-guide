@@ -66,12 +66,14 @@ class Admin {
 	// ── Menu ────────────────────────────────────────────────────────────
 
 	public function register_menu() {
-		$parent = ! empty( $this->context->menu_defaults['parent'] ) ? $this->context->menu_defaults['parent'] : 'tools.php';
+		$menu   = $this->context->menu_defaults;
+		$parent = ! empty( $menu['parent'] ) ? $menu['parent'] : 'tools.php';
+		$label  = isset( $menu['builder_label'] ) ? (string) $menu['builder_label'] : __( 'Guide Builder', 'binary-wp-admin-guide' );
 
 		add_submenu_page(
 			$parent,
-			'Guide Builder',
-			'Guide Builder',
+			$label,
+			$label,
 			$this->context->capability,
 			$this->page_slug,
 			array( $this, 'render_page' )

@@ -47,7 +47,7 @@ All options are optional. Full example with overrides:
 Plugin::boot( 'my_prefix', [
     'package_path'    => __DIR__ . '/vendor/binary-wp/admin-guide/',
     'package_url'     => plugin_dir_url( __FILE__ ) . 'vendor/binary-wp/admin-guide/',
-    'package_version' => '0.6.2',
+    'package_version' => '0.7.0',
     'guide_dir'       => __DIR__ . '/guide/',
     'capability'      => 'manage_options',
     'menu'            => [
