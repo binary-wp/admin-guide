@@ -39,7 +39,9 @@ class Config {
 	public function __construct( Context $context, Integrations $integrations ) {
 		$this->context      = $context;
 		$this->integrations = $integrations;
-		$this->post_type    = $context->prefix . '_guide_page';
+		// Renamed from `{prefix}_guide_page` to `{prefix}_guide` in v0.8.0 —
+		// see Plugin::register_post_type() + migrate_legacy_post_type().
+		$this->post_type    = $context->prefix . '_guide';
 		$this->migration_key = $context->option_key( 'cpt_migrated' );
 
 		// One-shot migration from wp_option to CPT.

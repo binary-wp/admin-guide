@@ -112,8 +112,11 @@ class Plugin {
 	private function __construct( Context $context ) {
 		$this->context = $context;
 
-		// Register the guide page CPT.
+		// Register the guide CPT, then run one-time legacy post_type
+		// migration ({prefix}_guide_page → {prefix}_guide). The migration
+		// marker option short-circuits subsequent boots.
 		add_action( 'init', array( $this, 'register_post_type' ) );
+		add_action( 'init', array( $this, 'migrate_legacy_post_type' ), 11 );
 
 		$this->placeholders = new Placeholders( $context );
 		$this->integrations = new Integrations( $context );
@@ -131,11 +134,17 @@ class Plugin {
 	}
 
 	/**
-	 * Register the guide_page CPT.
+	 * Register the guide CPT.
 	 * Prefixed per-instance to support multiple instances.
+	 *
+	 * Renamed from `{prefix}_guide_page` to `{prefix}_guide` in v0.8.0 to free
+	 * up the unprefixed `guide` namespace for content CPTs registered by host
+	 * sites (e.g. palmetto-migration's content `guide` CPT). Backward-compat
+	 * record-type migration runs once via `migrate_legacy_post_type()` below
+	 * — see Plugin::__construct().
 	 */
 	public function register_post_type() {
-		$slug = $this->context->prefix . '_guide_page';
+		$slug = $this->context->prefix . '_guide';
 
 		if ( post_type_exists( $slug ) ) {
 			return;
@@ -157,8 +166,48 @@ class Plugin {
 
 	/**
 	 * Get the CPT slug for this instance.
+	 *
+	 * Returns the new `{prefix}_guide` slug. Existing records under the
+	 * legacy `{prefix}_guide_page` post_type are migrated by
+	 * `migrate_legacy_post_type()` — code paths reading via this getter pick
+	 * up the new slug automatically.
 	 */
 	public function get_post_type() {
-		return $this->context->prefix . '_guide_page';
+		return $this->context->prefix . '_guide';
+	}
+
+	/**
+	 * One-time backward-compat migration: convert any existing posts of the
+	 * legacy `{prefix}_guide_page` post_type to the new `{prefix}_guide`
+	 * type. Idempotent — re-runs are no-ops.
+	 *
+	 * Triggered from Plugin::__construct() on init. Stores a completion
+	 * marker option so subsequent boots short-circuit.
+	 */
+	public function migrate_legacy_post_type() {
+		$marker_key = $this->context->prefix . '_admin_guide_pt_migration_v0_8';
+		if ( get_option( $marker_key ) === '1' ) {
+			return;
+		}
+		global $wpdb;
+		$old = $this->context->prefix . '_guide_page';
+		$new = $this->context->prefix . '_guide';
+		// Use direct UPDATE — preserves post-id, postmeta, revisions.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$count = $wpdb->update(
+			$wpdb->posts,
+			array( 'post_type' => $new ),
+			array( 'post_type' => $old ),
+			array( '%s' ),
+			array( '%s' )
+		);
+		if ( $count > 0 ) {
+			// Bust caches — post_type changes affect get_posts results.
+			wp_cache_flush();
+			if ( function_exists( 'flush_rewrite_rules' ) ) {
+				flush_rewrite_rules( false );
+			}
+		}
+		update_option( $marker_key, '1' );
 	}
 }
