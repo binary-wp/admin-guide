@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.8.0 — 2026-06-24
+
+### Changed
+- **Guide CPT slug renamed** `{prefix}_guide_page` → `{prefix}_guide`, freeing the
+  unprefixed `guide` namespace for host content CPTs (e.g. a site's own `guide`
+  post type). Updated `Config::$post_type` and `Plugin::register_post_type()` /
+  `get_post_type()`.
+
+### Added
+- **One-time legacy migration** `Plugin::migrate_legacy_post_type()` — converts
+  existing `{prefix}_guide_page` posts to `{prefix}_guide` in place (preserves
+  post IDs, postmeta and revisions), idempotent via a completion-marker option,
+  hooked on `init` priority 11.
+
+### Fixed
+- **Viewer** — clear the floated `.subsubsub` children sub-nav so a tab's `<h2>`
+  starts on its own line instead of wrapping beside the nav.
+
 ## 0.7.0 — 2026-04-16
 
 ### Added

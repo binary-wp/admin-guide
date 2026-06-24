@@ -177,6 +177,9 @@ class Viewer {
 				);
 			}
 			echo '</ul>';
+			// Clear the floated .subsubsub nav so the tab content (its <h2>)
+			// starts on its own line instead of wrapping beside the nav.
+			echo '<br class="clear" />';
 		}
 
 		$html = $this->generator->read_tab( $target );
