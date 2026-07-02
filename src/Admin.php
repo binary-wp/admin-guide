@@ -96,6 +96,16 @@ class Admin {
 			$this->context->page_slug( 'settings' ),
 			array( $this, 'render_settings_page' )
 		);
+
+		// menu.builder = false → keep the builder pages routable (the Viewer's
+		// "Guide Builder" button links to them) but hide them from the admin
+		// menu, so the guide is reached through the Viewer, not a menu item.
+		$in_menu = ! isset( $menu['builder'] ) || false !== $menu['builder'];
+		if ( ! $in_menu ) {
+			remove_submenu_page( $parent, $this->page_slug );
+			remove_submenu_page( $parent, $this->context->page_slug( 'instructions' ) );
+			remove_submenu_page( $parent, $this->context->page_slug( 'settings' ) );
+		}
 	}
 
 	/**

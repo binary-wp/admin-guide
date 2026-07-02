@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.0 — unreleased
+
+### Added
+- **`menu.builder` boot arg** (bool, default `true`). Set `false` to hide the Guide Builder / Instructions / Settings & Tools submenus from the admin menu while keeping the pages routable — the guide is then reached through the Viewer only.
+- **Viewer "Guide Builder" button** — a right-aligned action in the Viewer header (next to Regenerate) linking to the builder, so hosts that hide the builder submenu still expose it in one click.
+
+### Fixed
+- **Viewer nav wrapping** — scoped CSS so the top `.nav-tab-wrapper` wraps cleanly via flexbox (no floated-tab overlap when there are many tabs) and the child `.subsubsub` sub-nav wraps instead of overflowing; first content heading no longer collides with the sub-nav.
+
 ## 0.8.0 — 2026-06-24
 
 ### Changed

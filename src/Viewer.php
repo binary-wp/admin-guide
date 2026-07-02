@@ -85,21 +85,35 @@ class Viewer {
 		$regenerated = isset( $_GET['regen'] ) && '1' === (string) $_GET['regen'];
 		$regen_url   = admin_url( 'admin-post.php' );
 		?>
+		<style>
+			.binary-wp-admin-guide-viewer .nav-tab-wrapper{display:flex;flex-wrap:wrap;border-bottom:1px solid #c3c4c7;padding-top:0;}
+			.binary-wp-admin-guide-viewer .nav-tab-wrapper .nav-tab{float:none;margin:0 0 -1px;}
+			.binary-wp-admin-guide-viewer .subsubsub{white-space:normal;float:none;margin:0 0 12px;}
+			.binary-wp-admin-guide-viewer__body > :first-child{margin-top:0;}
+			.binary-wp-admin-guide-viewer__actions{margin-left:auto;display:flex;align-items:center;gap:8px;}
+		</style>
 		<div class="wrap binary-wp-admin-guide-viewer">
-			<h1 style="display:flex;align-items:center;gap:12px;">
+			<h1 style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
 				<?php
 				$menu  = $this->context->menu_defaults;
 				$title = isset( $menu['viewer_label'] ) ? (string) $menu['viewer_label'] : __( 'Admin Guide', 'binary-wp-admin-guide' );
 				echo esc_html( $title );
 				?>
-				<form method="post" action="<?php echo esc_url( $regen_url ); ?>" style="margin:0;">
-					<?php wp_nonce_field( $this->context->nonce_action( 'regenerate_viewer' ) ); ?>
-					<input type="hidden" name="action" value="<?php echo esc_attr( $this->context->action_name( 'regenerate_viewer' ) ); ?>">
-					<?php if ( $active ) : ?>
-						<input type="hidden" name="return_section" value="<?php echo esc_attr( $active ); ?>">
+				<span class="binary-wp-admin-guide-viewer__actions">
+					<?php if ( current_user_can( $this->context->capability ) ) : ?>
+						<a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=' . $this->context->page_slug( 'builder' ) ) ); ?>">
+							<?php esc_html_e( 'Guide Builder', 'binary-wp-admin-guide' ); ?>
+						</a>
 					<?php endif; ?>
-					<button type="submit" class="button button-small">↻ <?php esc_html_e( 'Regenerate', 'binary-wp-admin-guide' ); ?></button>
-				</form>
+					<form method="post" action="<?php echo esc_url( $regen_url ); ?>" style="margin:0;">
+						<?php wp_nonce_field( $this->context->nonce_action( 'regenerate_viewer' ) ); ?>
+						<input type="hidden" name="action" value="<?php echo esc_attr( $this->context->action_name( 'regenerate_viewer' ) ); ?>">
+						<?php if ( $active ) : ?>
+							<input type="hidden" name="return_section" value="<?php echo esc_attr( $active ); ?>">
+						<?php endif; ?>
+						<button type="submit" class="button button-small">↻ <?php esc_html_e( 'Regenerate', 'binary-wp-admin-guide' ); ?></button>
+					</form>
+				</span>
 			</h1>
 
 			<?php if ( $regenerated ) : ?>
