@@ -6,7 +6,7 @@
 
 | Feature | Description |
 |---|---|
-| CPT-based storage | Each guide tab is a `{prefix}_guide_page` post — hierarchical, with revisions and REST API support |
+| CPT-based storage | Each guide tab is a `{prefix}_guide` post — hierarchical, with revisions and REST API support |
 | Drag & drop builder | Nav-menu style sortable UI with parent/child depth (max 1 level) |
 | WYSIWYG editor | TinyMCE instance with a dedicated placeholder palette sidebar |
 | Placeholder system | `{{token}}` syntax with typed registry — `callback`, `settings_link`, `image` — rendered as non-editable pills in the editor |

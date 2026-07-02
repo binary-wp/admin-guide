@@ -67,7 +67,7 @@ Your instance prefix (`'my_prefix'`) scopes all CPT slugs, AJAX actions, nonces,
 
 ### Storage
 
-Guide pages are stored as a **hierarchical custom post type** (`{prefix}_guide_page`):
+Guide pages are stored as a **hierarchical custom post type** (`{prefix}_guide`):
 
 | Field | Usage |
 |---|---|
@@ -93,7 +93,7 @@ Standalone TinyMCE with placeholder palette sidebar. Click to insert or drag & d
 
 On every save, the generator:
 
-1. Queries all published `{prefix}_guide_page` posts
+1. Queries all published `{prefix}_guide` posts
 2. Resolves `{{placeholders}}` via PHP callbacks
 3. Writes `.html` snapshots to `guide/html/` (for fast admin rendering)
 4. Writes `.md` copies to `guide/` (portable reading, via `league/html-to-markdown`)

@@ -9,23 +9,17 @@
 ### Fixed
 - **Viewer nav wrapping** — scoped CSS so the top `.nav-tab-wrapper` wraps cleanly via flexbox (no floated-tab overlap when there are many tabs) and the child `.subsubsub` sub-nav wraps instead of overflowing; first content heading no longer collides with the sub-nav.
 
-## 0.8.0 — 2026-06-24
+## 0.8.0 — 2026-05-09
 
 ### Changed
-- **Guide CPT slug renamed** `{prefix}_guide_page` → `{prefix}_guide`, freeing the
-  unprefixed `guide` namespace for host content CPTs (e.g. a site's own `guide`
-  post type). Updated `Config::$post_type` and `Plugin::register_post_type()` /
-  `get_post_type()`.
+- **CPT renamed: `{prefix}_guide_page` → `{prefix}_guide`** in `Plugin::register_post_type()` + `Config` post_type binding. Frees the unprefixed `guide` namespace for content CPTs registered by host sites. Records under the legacy post_type are auto-migrated on init (see below).
 
 ### Added
-- **One-time legacy migration** `Plugin::migrate_legacy_post_type()` — converts
-  existing `{prefix}_guide_page` posts to `{prefix}_guide` in place (preserves
-  post IDs, postmeta and revisions), idempotent via a completion-marker option,
-  hooked on `init` priority 11.
+- **`Plugin::migrate_legacy_post_type()`** — one-time backward-compat migration: scans `wp_posts` for any `{prefix}_guide_page` rows and updates `post_type` → `{prefix}_guide`. Preserves post-id, postmeta, revisions (direct DB UPDATE, no insert/delete). Idempotent — completion marker stored in `{prefix}_admin_guide_pt_migration_v0_8` option, subsequent boots short-circuit. Hooked on `init` priority 11 (after `register_post_type` priority 10). Flushes rewrite rules + cache when records were updated.
 
-### Fixed
-- **Viewer** — clear the floated `.subsubsub` children sub-nav so a tab's `<h2>`
-  starts on its own line instead of wrapping beside the nav.
+### Migration / upgrade notes
+- Hosts that upgrade from 0.7.x: no API changes for code that uses `Plugin::get_post_type()` (returns the new slug). Code that hardcodes the literal `{prefix}_guide_page` post_type in queries / `wp_insert_post` / `get_page_by_path` calls must be updated to `{prefix}_guide`. The package's own internals (Config queries, Generator post lookups, etc.) handle this automatically.
+- Existing data migrates the first time the plugin loads under v0.8.0 — no manual action required.
 
 ## 0.7.0 — 2026-04-16
 
