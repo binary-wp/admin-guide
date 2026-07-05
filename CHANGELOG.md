@@ -1,6 +1,11 @@
 # Changelog
 
-## 0.9.0 — unreleased
+## 0.9.1 — 2026-07-05
+
+### Fixed
+- **Generator slug/file mismatch** — `generate()` wrote snapshots using the raw slug (`pages.html`) while `read_tab()`/`remove_files()` resolved the path via `sanitize_file_name()`, which mangles slugs WordPress reads as bare extensions (e.g. `pages` → `unnamed-file.pages`). Any such tab rendered blank in the Viewer and Regenerate couldn't fix it. Both sides now use `sanitize_key()` consistently (a no-op for normal slugs), so `pages` and similar tabs resolve correctly.
+
+## 0.9.0 — 2026-07-02
 
 ### Added
 - **`menu.builder` boot arg** (bool, default `true`). Set `false` to hide the Guide Builder / Instructions / Settings & Tools submenus from the admin menu while keeping the pages routable — the guide is then reached through the Viewer only.

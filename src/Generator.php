@@ -70,11 +70,20 @@ class Generator {
 		}
 
 		foreach ( $templates as $slug => $html ) {
+			// Derive the on-disk basename with the SAME sanitizer read_tab()
+			// uses (sanitize_key, not sanitize_file_name — the latter treats
+			// slugs like "pages" as a bare file extension and mangles them to
+			// "unnamed-file.pages", so the reader could never find them).
+			$safe = sanitize_key( $slug );
+			if ( '' === $safe ) {
+				continue;
+			}
+
 			// Resolve {{placeholders}} in HTML template.
 			$resolved_html = $this->placeholders->resolve( $html );
 
 			// Write .html snapshot for fast admin rendering.
-			file_put_contents( $this->html_dir . $slug . '.html', $resolved_html );
+			file_put_contents( $this->html_dir . $safe . '.html', $resolved_html );
 
 			// Write .md (convert resolved HTML → Markdown) for portable reading.
 			if ( $converter ) {
@@ -82,7 +91,7 @@ class Generator {
 			} else {
 				$md = $resolved_html;
 			}
-			file_put_contents( $this->output_dir . $slug . '.md', $md );
+			file_put_contents( $this->output_dir . $safe . '.md', $md );
 		}
 	}
 
@@ -118,7 +127,7 @@ class Generator {
 	 * @return string HTML content or empty string.
 	 */
 	public function read_tab( $slug ) {
-		$file = $this->html_dir . sanitize_file_name( $slug ) . '.html';
+		$file = $this->html_dir . sanitize_key( $slug ) . '.html';
 		if ( file_exists( $file ) ) {
 			return file_get_contents( $file );
 		}
@@ -143,7 +152,7 @@ class Generator {
 	 * @param string $slug Old slug to clean up.
 	 */
 	public function remove_files( $slug ) {
-		$safe = sanitize_file_name( $slug );
+		$safe = sanitize_key( $slug );
 		if ( ! $safe ) {
 			return;
 		}
