@@ -51,6 +51,9 @@ class Plugin {
 	/** @var Viewer|null  null when opted out via menu.viewer = false */
 	public $viewer;
 
+	/** @var Compare|null  null unless the host passed a `compare` config array */
+	public $compare;
+
 	// ── Boot / Registry ─────────────────────────────────────────────────
 
 	/**
@@ -130,6 +133,13 @@ class Plugin {
 		$viewer_enabled  = ! isset( $menu['viewer'] ) || false !== $menu['viewer'];
 		if ( $viewer_enabled ) {
 			$this->viewer = new Viewer( $context, $this->config, $this->generator );
+		}
+
+		// Site Compare — optional source-vs-target visual gallery tool page.
+		// Boots ONLY when the host passes a `compare` config array; absent
+		// config leaves the feature completely inert.
+		if ( isset( $context->raw_args['compare'] ) && is_array( $context->raw_args['compare'] ) ) {
+			$this->compare = new Compare( $context, $context->raw_args['compare'] );
 		}
 	}
 

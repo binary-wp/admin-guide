@@ -1,6 +1,6 @@
 # Admin Guide — Feature List
 
-> Current version: **0.6.0**
+> Current version: **0.11.0**
 
 ## Core Features
 
@@ -22,6 +22,7 @@
 | Template scaffolding | Auto-generated HTML for post type, taxonomy, and custom tabs |
 | i18n ready | Full translation support — `.pot`, `.po`, `.mo` with text domain `binary-wp-admin-guide` |
 | Zero-config boot | `Plugin::boot('prefix')` with automatic path and URL detection |
+| Site Compare (optional) | Opt-in source-vs-target visual gallery tool page — sitemap-scraped URL inventory, detached capture runs via a host node tool, same-origin gallery iframe. Enabled by the `compare` boot config |
 
 ## Bundled Integrations
 

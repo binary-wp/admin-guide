@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.11.0 — 2026-07-17
+
+### Added
+- **Site Compare tool page** (`src/Compare.php`) — opt-in source-vs-target visual comparison surface, generalized from the Wolfe's Neck migration "visual-compare" module. Enabled only when the host passes a `compare` config array to `Plugin::boot()`; absent config leaves the feature completely inert.
+  - Submenu page `?page={prefix}-admin-guide-compare` under the package's `menu.parent`, with a **settings form** (source base URL / source sitemap URL / target base URL) stored in the `{prefix}_admin_guide_compare` option — saved values win over boot defaults and are passed to the capture wrapper as `--sitemap` / `--prod-base` / `--local-base` / `--out`.
+  - **Capture toolbar**: source select (full sitemap / demo / per-sitemap-type derived from `manifest.json`), "first N" limit, incremental checkbox (default on), Regenerate (label tracks the selection), Stop, and a polled status line.
+  - **Same-origin gallery iframe**: the host tool's `index.html` under `wp-content/uploads/{output_rel}/` is loaded with `?wp=1&ajax=<admin-ajax>&nonce=…&action={prefix}_admin_guide_compare_refresh`, so the gallery's per-page refresh buttons call `admin-ajax.php` directly (no CORS, no control server).
+  - **URL inventory** — collapsible table read from `manifest.json`: path, type, section, HTTP status on both sides, Δheight. Surfaces the scraped URL list.
+  - Four prefix-scoped AJAX actions (`{prefix}_admin_guide_compare_refresh|regenerate|stop|status`) + an admin-post settings handler, all capability- and nonce-gated. Regenerate runs detached (`nohup`) with a PID lockfile; liveness is verified via `posix_kill`/`kill -0` so a crashed run never leaves a phantom "capturing…" state. Run mode is regex-validated on the raw POST value (`sanitize_key()` would strip the colon out of `type:<slug>`); node's dir is prepended to `PATH` for php-fpm shells.
+  - **Graceful degradation**: with `shell_exec` disabled or wrapper/tool/node missing, settings + read-only gallery + inventory still work; the toolbar is disabled with a notice naming what's missing.
+- `Plugin::$compare` public property (null unless the `compare` config is present).
+
+### Fixed
+- **Standalone no-composer fallback missed `src/Viewer.php`** — the manual `require_once` chain in `admin-guide.php` never loaded the Viewer class, fataling any standalone install without `composer install` since 0.7.0. Now included (along with the new `src/Compare.php`).
+
 ## 0.10.0 — 2026-07-17
 
 ### Added
