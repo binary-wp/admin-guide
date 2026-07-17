@@ -84,14 +84,14 @@ class Viewer {
 
 		$regenerated = isset( $_GET['regen'] ) && '1' === (string) $_GET['regen'];
 		$regen_url   = admin_url( 'admin-post.php' );
+
+		wp_enqueue_style(
+			$this->context->asset_handle( 'viewer' ),
+			$this->context->asset_url( 'guide-viewer.css' ),
+			array(),
+			$this->context->package_version
+		);
 		?>
-		<style>
-			.binary-wp-admin-guide-viewer .nav-tab-wrapper{display:flex;flex-wrap:wrap;border-bottom:1px solid #c3c4c7;padding-top:0;}
-			.binary-wp-admin-guide-viewer .nav-tab-wrapper .nav-tab{float:none;margin:0 0 -1px;}
-			.binary-wp-admin-guide-viewer .subsubsub{white-space:normal;float:none;margin:0 0 12px;}
-			.binary-wp-admin-guide-viewer__body > :first-child{margin-top:0;}
-			.binary-wp-admin-guide-viewer__actions{margin-left:auto;display:flex;align-items:center;gap:8px;}
-		</style>
 		<div class="wrap binary-wp-admin-guide-viewer">
 			<h1 style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
 				<?php

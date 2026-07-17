@@ -106,6 +106,23 @@ The host renders the guide viewer with:
 - Children as inline sub-navigation (WooCommerce-style `subsubsub`)
 - Group-only tabs auto-fall through to first child content
 
+The viewer ships its own paint (`assets/guide-viewer.css`, enqueued automatically),
+so guide content needs no styling from the host:
+
+- **Tables** get the wp-admin list-table look — no class needed on the `<table>`.
+- **Figures** get a bordered image and a muted caption. No width or float is
+  imposed, so a figure that carries its own sizing keeps it.
+- **`binary-wp-admin-guide-figure-inset`** — add this class to a `<figure>` to
+  float it right with the copy wrapping around it. Suits screenshots; leave it
+  off anything that needs its natural width.
+
+```html
+<figure class="binary-wp-admin-guide-figure-inset">
+    <img src="..." alt="...">
+    <figcaption>Where to find the Transform menu.</figcaption>
+</figure>
+```
+
 ## Per-host integrations
 
 Ship your own JSON integration definitions alongside the package:

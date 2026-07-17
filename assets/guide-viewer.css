@@ -1,0 +1,164 @@
+/**
+ * Viewer chrome — page furniture + paint for the generated guide body.
+ *
+ * Two concerns live here:
+ *
+ * 1. Page furniture (`.binary-wp-admin-guide-viewer`) — nav-tab wrapping, the
+ *    sub-nav, the header actions row.
+ *
+ * 2. Content paint (`.binary-wp-admin-guide-viewer__body`) — the guide body is
+ *    generated HTML assembled from two sources: dynamic `{{placeholders}}` and
+ *    hand-authored markup inside guide tabs. Neither is guaranteed to carry
+ *    classes, so the content rules are element selectors: they cover both, and
+ *    cover anything added later, with no per-element maintenance.
+ *
+ * Values are wp-admin's own tokens (#c3c4c7 / #dcdcde borders, #f6f7f7 band),
+ * so the guide reads as native admin chrome rather than bespoke paint.
+ * Everything is scoped to the viewer so it can't leak into other screens.
+ */
+
+/* ── Page furniture ────────────────────────────────────────────────────── */
+
+.binary-wp-admin-guide-viewer .nav-tab-wrapper {
+	display: flex;
+	flex-wrap: wrap;
+	border-bottom: 1px solid #c3c4c7;
+	padding-top: 0;
+}
+
+.binary-wp-admin-guide-viewer .nav-tab-wrapper .nav-tab {
+	float: none;
+	margin: 0 0 -1px;
+}
+
+.binary-wp-admin-guide-viewer .subsubsub {
+	white-space: normal;
+	float: none;
+	margin: 0 0 12px;
+}
+
+.binary-wp-admin-guide-viewer__actions {
+	margin-left: auto;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.binary-wp-admin-guide-viewer__body > :first-child {
+	margin-top: 0;
+}
+
+/* Contain the floats below so a tall figure can't spill past the panel. */
+.binary-wp-admin-guide-viewer__body::after {
+	content: "";
+	display: table;
+	clear: both;
+}
+
+/* ── Tables ────────────────────────────────────────────────────────────────
+ * Gives every table in the guide the standard wp-admin list-table look (the
+ * `.widefat .striped` treatment: header band, hairline borders, zebra rows,
+ * comfortable padding) without needing a class on each `<table>`. */
+
+.binary-wp-admin-guide-viewer__body table {
+	width: 100%;
+	margin: 1em 0 1.75em;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	border-collapse: collapse;
+	border-spacing: 0;
+	background: #fff;
+	font-size: 13px;
+}
+
+.binary-wp-admin-guide-viewer__body th,
+.binary-wp-admin-guide-viewer__body td {
+	padding: 10px 12px;
+	text-align: left;
+	vertical-align: top;
+	line-height: 1.5;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.binary-wp-admin-guide-viewer__body thead th {
+	background: #f6f7f7;
+	border-bottom: 1px solid #c3c4c7;
+	font-weight: 600;
+	color: #1d2327;
+	white-space: nowrap;
+}
+
+/* Zebra — even rows, so the header band and the first row stay distinct. */
+.binary-wp-admin-guide-viewer__body tbody tr:nth-child(even) > td {
+	background: #f6f7f7;
+}
+
+.binary-wp-admin-guide-viewer__body tbody tr:last-child > td {
+	border-bottom: 0;
+}
+
+.binary-wp-admin-guide-viewer__body tbody tr:hover > td {
+	background: #f0f6fc;
+}
+
+/* Long reference tables read better when the group heading has room above it. */
+.binary-wp-admin-guide-viewer__body h4 {
+	margin-top: 1.75em;
+}
+
+/* ── Figures ───────────────────────────────────────────────────────────────
+ * Base paint applies to every `<figure>` — screenshots, diagrams, screencasts
+ * alike — and deliberately sets no width or float, so a figure that carries its
+ * own sizing (a wide screencast, say) keeps it. */
+
+.binary-wp-admin-guide-viewer__body figure {
+	margin: 1em 0 1.75em;
+}
+
+.binary-wp-admin-guide-viewer__body figure img {
+	display: block;
+	width: 100%;
+	height: auto;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+}
+
+.binary-wp-admin-guide-viewer__body figcaption {
+	margin-top: 6px;
+	color: #646970;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+/* Inset figure — opt-in: floats right with the copy wrapping around it.
+ * Opt-in rather than automatic because it imposes a narrow column, which suits
+ * a screenshot but ruins anything that needs its natural width.
+ *
+ * Sized by max-width rather than intrinsic pixels — screenshots vary a lot (a
+ * 523x459 menu next to a tall 384x1040 sidebar panel), and a single cap keeps
+ * the text column an even width. `clear: right` stops two figures pairing up
+ * side by side; headings clear the float so a tall figure can flow past its own
+ * sub-sections but never bleed into the next major section. */
+
+.binary-wp-admin-guide-viewer__body .binary-wp-admin-guide-figure-inset {
+	float: right;
+	clear: right;
+	width: 340px;
+	max-width: 42%;
+	margin: 0 0 1.25em 2em;
+}
+
+.binary-wp-admin-guide-viewer__body h2,
+.binary-wp-admin-guide-viewer__body h3 {
+	clear: both;
+}
+
+/* Narrow admin (or a collapsed window): stop floating, go full width. */
+@media (max-width: 960px) {
+	.binary-wp-admin-guide-viewer__body .binary-wp-admin-guide-figure-inset {
+		float: none;
+		width: auto;
+		max-width: 100%;
+		margin: 1em 0 1.5em;
+	}
+}

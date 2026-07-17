@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.10.0 — 2026-07-17
+
+### Added
+- **Viewer content paint** (`assets/guide-viewer.css`) — the generated guide body now ships its own chrome instead of leaving hosts to paint it:
+  - **Tables** get the standard wp-admin list-table look (`.widefat .striped`: header band, hairline borders, zebra rows, comfortable padding) via element selectors, so both `{{placeholder}}` output and hand-authored tab markup are covered with no per-table class.
+  - **Figures** get base paint (bordered image, muted figcaption) — deliberately no width or float, so a figure carrying its own sizing keeps it.
+  - **`.binary-wp-admin-guide-figure-inset`** — opt-in modifier that floats a figure right with the copy wrapping around it, capped at `340px` / `42%` and unfloated below 960px. Opt-in rather than automatic because the narrow column suits a screenshot but ruins anything needing its natural width (a wide screencast, say).
+- Values are wp-admin's own tokens (`#c3c4c7` / `#dcdcde` / `#f6f7f7`), all scoped to `.binary-wp-admin-guide-viewer`, so nothing leaks into other admin screens.
+
+### Changed
+- **Viewer styles moved from an inline `<style>` block to an enqueued stylesheet** — handle `{prefix}-admin-guide-viewer`, versioned with `package_version` for cache-busting. The nav-tab / sub-nav / header-actions rules previously printed inline in `Viewer::render_page()` now live in the same file.
+
+### Migration / upgrade notes
+- Hosts that shipped their own viewer table or figure CSS (scoping rules to `.binary-wp-admin-guide-viewer__body`) can now drop it — the package covers it. Palmetto's `includes/admin-guide-content/guide-styles.php` was the reference case and is removed in the host plugin.
+- Hosts emitting floated screenshot figures should swap their own float class for `binary-wp-admin-guide-figure-inset` and regenerate the guide snapshots.
+
 ## 0.9.1 — 2026-07-05
 
 ### Fixed
