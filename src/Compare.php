@@ -90,6 +90,7 @@ class Compare {
 		add_action( 'wp_ajax_' . $context->action_name( 'compare_regenerate' ), array( $this, 'ajax_regenerate' ) );
 		add_action( 'wp_ajax_' . $context->action_name( 'compare_stop' ), array( $this, 'ajax_stop' ) );
 		add_action( 'wp_ajax_' . $context->action_name( 'compare_status' ), array( $this, 'ajax_status' ) );
+		add_action( 'wp_ajax_' . $context->action_name( 'compare_refresh_sitemap' ), array( $this, 'ajax_refresh_sitemap' ) );
 	}
 
 	// ── Config resolution ───────────────────────────────────────────────
@@ -244,6 +245,59 @@ class Compare {
 		return false; // can't tell → assume not running (recover)
 	}
 
+	/** Absolute path of $bin if on PATH (or a known abs path), else ''. */
+	private function which( $bin ) {
+		if ( ! $this->shell_available() ) {
+			return '';
+		}
+		$p = trim( (string) @shell_exec( 'command -v ' . escapeshellarg( $bin ) . ' 2>/dev/null' ) );
+		if ( '' === $p ) {
+			// fpm PATH is often minimal — probe the usual absolute locations.
+			foreach ( array( '/usr/bin/' . $bin, '/bin/' . $bin, '/usr/local/bin/' . $bin, '/opt/homebrew/bin/' . $bin ) as $abs ) {
+				if ( is_executable( $abs ) ) {
+					return $abs;
+				}
+			}
+			return '';
+		}
+		return is_executable( $p ) ? $p : '';
+	}
+
+	/**
+	 * Launch $inner as a background process that SURVIVES the current request.
+	 * php-fpm reaps the request's child process group on teardown, so a bare
+	 * `nohup … &` dies before it runs anything on macOS (which ships no `setsid`
+	 * binary). Detach into a NEW SESSION instead. Preference:
+	 *   1. `setsid` (Linux) — new session, immune to the reap.
+	 *   2. python3 double-fork + os.setsid() (macOS/Local) — same effect, no binary.
+	 *   3. `nohup … &` — last-resort fallback.
+	 */
+	private function spawn_detached( $inner ) {
+		if ( ! $this->shell_available() ) {
+			return;
+		}
+		$setsid = $this->which( 'setsid' );
+		if ( '' !== $setsid ) {
+			shell_exec( sprintf( 'nohup %s sh -c %s >/dev/null 2>&1 &', escapeshellarg( $setsid ), escapeshellarg( $inner ) ) );
+			return;
+		}
+		$python = $this->which( 'python3' );
+		if ( '' !== $python ) {
+			// Classic daemonize: fork → setsid → fork → exec. The grandchild is a
+			// session leader with no controlling terminal, reparented to init, so
+			// the fpm request teardown can't signal it.
+			$script = "import os,sys\n"
+				. "if os.fork(): os._exit(0)\n"
+				. "os.setsid()\n"
+				. "if os.fork(): os._exit(0)\n"
+				. "dn=os.open('/dev/null',os.O_RDWR); os.dup2(dn,0)\n"
+				. "os.execv('/bin/sh',['/bin/sh','-c',sys.argv[1]])\n";
+			shell_exec( escapeshellarg( $python ) . ' -c ' . escapeshellarg( $script ) . ' ' . escapeshellarg( $inner ) );
+			return;
+		}
+		shell_exec( sprintf( 'nohup sh -c %s >/dev/null 2>&1 &', escapeshellarg( $inner ) ) );
+	}
+
 	// ── Manifest helpers ────────────────────────────────────────────────
 
 	/** Decoded manifest.json, or null when absent/invalid. */
@@ -257,14 +311,35 @@ class Compare {
 	}
 
 	/**
-	 * Distinct sub-sitemap types present in the manifest (slug => page count).
-	 * Populated by capture runs (each page carries its original sitemap
-	 * `type`); empty until a sitemap run has happened — the per-type source
-	 * options appear only then.
+	 * Decoded sitemap.json — the SOURCE inventory (per-type counts + path list)
+	 * written by a `--harvest-only` pass ("Refresh sitemap data"). This is what
+	 * keeps the source page/type info valid independent of the last capture run,
+	 * so switching the sitemap URL no longer leaves a stale count behind.
+	 *
+	 * @return array|null
+	 */
+	private function sitemap_data( array $cfg ) {
+		$fp = $cfg['out_dir'] . '/sitemap.json';
+		if ( ! file_exists( $fp ) ) {
+			return null;
+		}
+		$d = json_decode( (string) file_get_contents( $fp ), true );
+		return is_array( $d ) ? $d : null;
+	}
+
+	/**
+	 * Distinct sub-sitemap types (slug => count) that back the per-type source
+	 * options. Prefers the harvested sitemap.json (current source inventory,
+	 * refreshable without a capture); falls back to the capture manifest so
+	 * older reports still populate the dropdown.
 	 *
 	 * @return array<string,int>
 	 */
 	private function types( array $cfg ) {
+		$s = $this->sitemap_data( $cfg );
+		if ( $s && ! empty( $s['types'] ) && is_array( $s['types'] ) ) {
+			return array_map( 'intval', $s['types'] );
+		}
 		$m     = $this->manifest( $cfg );
 		$types = array();
 		foreach ( ( $m ? ( isset( $m['pages'] ) ? (array) $m['pages'] : array() ) : array() ) as $p ) {
@@ -274,6 +349,46 @@ class Compare {
 			}
 		}
 		return $types;
+	}
+
+	/** One-line SOURCE sitemap summary ("N URLs · M types · refreshed …"), or ''. */
+	private function source_summary( array $cfg ) {
+		$s = $this->sitemap_data( $cfg );
+		if ( ! $s ) {
+			return '';
+		}
+		return sprintf(
+			/* translators: 1: URL count, 2: type count, 3: timestamp */
+			__( '%1$d URLs · %2$d types · refreshed %3$s', 'binary-wp-admin-guide' ),
+			isset( $s['total'] ) ? (int) $s['total'] : 0,
+			isset( $s['types'] ) ? count( (array) $s['types'] ) : 0,
+			isset( $s['generatedAt'] ) ? (string) $s['generatedAt'] : '?'
+		);
+	}
+
+	/**
+	 * Build the `--harvest-only` command (source inventory refresh, no browser).
+	 * Synchronous + quick: just fetches the sitemap XML and writes sitemap.json.
+	 *
+	 * @return string|null Shell command, or null when the tool isn't runnable.
+	 */
+	private function harvest_command( array $cfg ) {
+		if ( ! $cfg['ready'] ) {
+			return null;
+		}
+		$settings = $this->settings();
+		$sitemap  = isset( $settings['source_sitemap'] ) ? (string) $settings['source_sitemap'] : '';
+		if ( '' === $sitemap ) {
+			return null;
+		}
+		return sprintf(
+			'export PATH=%s:"$PATH"; %s %s --harvest-only --sitemap %s --out %s 2>&1',
+			escapeshellarg( dirname( $cfg['node'] ) ),
+			escapeshellarg( $cfg['node'] ),
+			escapeshellarg( $cfg['tool_dir'] . '/capture.mjs' ),
+			escapeshellarg( $sitemap ),
+			escapeshellarg( $cfg['out_dir'] )
+		);
 	}
 
 	/** One-line manifest summary ("N pages · mode · run …"), or ''. */
@@ -368,6 +483,13 @@ class Compare {
 
 			<?php $this->render_settings_form( $settings ); ?>
 
+			<?php $src_summary = $this->source_summary( $cfg ); ?>
+			<div id="bwp-compare-source" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 1em;font-size:12px;color:#50575e;">
+				<strong><?php esc_html_e( 'Source sitemap:', 'binary-wp-admin-guide' ); ?></strong>
+				<span id="bwp-compare-source-summary"><?php echo esc_html( '' !== $src_summary ? $src_summary : __( 'not harvested yet', 'binary-wp-admin-guide' ) ); ?></span>
+				<button type="button" class="button button-small" id="bwp-compare-refresh-sitemap" <?php disabled( ! $cfg['ready'] ); ?>>↻ <?php esc_html_e( 'Refresh sitemap data', 'binary-wp-admin-guide' ); ?></button>
+			</div>
+
 			<?php if ( ! $cfg['ready'] ) : ?>
 				<div class="notice notice-warning inline" style="margin:1em 0;">
 					<p>
@@ -400,6 +522,10 @@ class Compare {
 				<label style="font-size:12px;color:#50575e;" title="<?php esc_attr_e( 'Skip pages already captured OK; only shoot missing/failed ones (also resumes a crashed run).', 'binary-wp-admin-guide' ); ?>">
 					<input type="checkbox" id="bwp-compare-incremental" checked <?php disabled( ! $cfg['ready'] ); ?>>
 					<?php esc_html_e( 'incremental (missing only)', 'binary-wp-admin-guide' ); ?>
+				</label>
+				<label style="font-size:12px;color:#50575e;" title="<?php esc_attr_e( 'Capture every page, but only ONE representative (most recently modified) of each other post type — one shot per layout instead of every post/CPT item.', 'binary-wp-admin-guide' ); ?>">
+					<input type="checkbox" id="bwp-compare-typical" <?php disabled( ! $cfg['ready'] ); ?>>
+					<?php esc_html_e( 'typical layouts only (1 per CPT, all pages)', 'binary-wp-admin-guide' ); ?>
 				</label>
 				<button class="button button-primary" id="bwp-compare-run" <?php disabled( ! $cfg['ready'] ); ?>>↻ <?php esc_html_e( 'Regenerate', 'binary-wp-admin-guide' ); ?></button>
 				<button class="button" id="bwp-compare-stop" style="display:none;">■ <?php esc_html_e( 'Stop', 'binary-wp-admin-guide' ); ?></button>
@@ -515,9 +641,10 @@ class Compare {
 	/** Toolbar behavior: regenerate / stop / status poll, gallery reload. */
 	private function render_toolbar_script( $ctl_nonce ) {
 		$actions = array(
-			'regenerate' => $this->context->action_name( 'compare_regenerate' ),
-			'stop'       => $this->context->action_name( 'compare_stop' ),
-			'status'     => $this->context->action_name( 'compare_status' ),
+			'regenerate'      => $this->context->action_name( 'compare_regenerate' ),
+			'stop'            => $this->context->action_name( 'compare_stop' ),
+			'status'          => $this->context->action_name( 'compare_status' ),
+			'refresh_sitemap' => $this->context->action_name( 'compare_refresh_sitemap' ),
 		);
 		?>
 		<script>
@@ -530,7 +657,10 @@ class Compare {
 			const stopBtn  = document.getElementById('bwp-compare-stop');
 			const modeSel  = document.getElementById('bwp-compare-mode');
 			const incChk   = document.getElementById('bwp-compare-incremental');
+			const typChk   = document.getElementById('bwp-compare-typical');
 			const limitInp = document.getElementById('bwp-compare-limit');
+			const smBtn    = document.getElementById('bwp-compare-refresh-sitemap');
+			const smEl     = document.getElementById('bwp-compare-source-summary');
 			let polling = null;
 
 			function post(action, extra) {
@@ -546,8 +676,27 @@ class Compare {
 				if (runBtn) runBtn.disabled = on;
 				if (modeSel) modeSel.disabled = on;
 				if (incChk) incChk.disabled = on;
+				if (typChk) typChk.disabled = on;
+				if (smBtn) smBtn.disabled = on;
 				if (stopBtn) stopBtn.style.display = on ? '' : 'none';
 			}
+
+			// Refresh sitemap data: re-harvest the source sitemap (no capture) so the
+			// source count + per-type options reflect the current sitemap. Reloads
+			// the page on success so the Source dropdown regenerates server-side.
+			if (smBtn) smBtn.addEventListener('click', () => {
+				smBtn.disabled = true;
+				if (smEl) smEl.textContent = 'refreshing…';
+				post(actions.refresh_sitemap).then(res => {
+					if (res && res.success) {
+						if (smEl) smEl.textContent = res.data.summary || '';
+						location.reload();
+					} else {
+						smBtn.disabled = false;
+						if (smEl) smEl.textContent = 'refresh failed: ' + ((res && res.data && res.data.message) || 'error');
+					}
+				});
+			});
 
 			let lastProgress = '';
 			function poll() {
@@ -572,10 +721,11 @@ class Compare {
 			if (runBtn) runBtn.addEventListener('click', () => {
 				const mode = modeSel ? modeSel.value : 'demo';
 				const incremental = incChk ? incChk.checked : true;
+				const typical = typChk ? typChk.checked : false;
 				const limit = limitInp && limitInp.value ? parseInt(limitInp.value, 10) : 0;
-				if (mode === 'full' && !incremental && !limit && !confirm('Full re-capture of the WHOLE sitemap (not incremental) can take many minutes. Continue?')) return;
-				running(true); statusEl.textContent = 'starting ' + mode + (limit ? ' · first ' + limit : '') + (incremental ? ' · incremental' : '') + '…';
-				post(actions.regenerate, { mode, incremental: incremental ? '1' : '0', limit: String(limit || 0) }).then(res => {
+				if (mode === 'full' && !incremental && !typical && !limit && !confirm('Full re-capture of the WHOLE sitemap (not incremental) can take many minutes. Continue?')) return;
+				running(true); statusEl.textContent = 'starting ' + mode + (typical ? ' · typical' : '') + (limit ? ' · first ' + limit : '') + (incremental ? ' · incremental' : '') + '…';
+				post(actions.regenerate, { mode, incremental: incremental ? '1' : '0', typical: typical ? '1' : '0', limit: String(limit || 0) }).then(res => {
 					if (!res || !res.success) { running(false); statusEl.textContent = 'failed: ' + ((res && res.data && res.data.message) || 'error'); return; }
 					startPolling();
 				});
@@ -590,11 +740,13 @@ class Compare {
 			// unmistakable what a click will capture.
 			function syncBtn() {
 				if (!runBtn || !modeSel) return;
+				const typ = typChk && typChk.checked ? ' · typical' : '';
 				const lim = limitInp && limitInp.value ? ' · first ' + limitInp.value : '';
-				runBtn.textContent = '↻ Regenerate — ' + modeSel.options[modeSel.selectedIndex].text + lim;
+				runBtn.textContent = '↻ Regenerate — ' + modeSel.options[modeSel.selectedIndex].text + typ + lim;
 			}
 			if (modeSel) modeSel.addEventListener('change', syncBtn);
 			if (limitInp) limitInp.addEventListener('input', syncBtn);
+			if (typChk) typChk.addEventListener('change', syncBtn);
 			if (modeSel) syncBtn();
 
 			// If a run is already going (started elsewhere / CLI), pick it up on load.
@@ -623,11 +775,58 @@ class Compare {
 
 		update_option( $this->context->option_key( 'compare' ), $settings, false );
 
+		// Refresh the source inventory (sitemap.json) so the page/type counts
+		// reflect the sitemap URL just saved — this is what keeps the "source"
+		// info valid over time instead of stranding a stale count from the last
+		// capture. Best-effort + synchronous (harvest is a quick XML fetch).
+		$cfg     = $this->config();
+		$harvest = $this->harvest_command( $cfg );
+		if ( $harvest && $this->shell_available() ) {
+			@shell_exec( $harvest );
+		}
+
 		wp_safe_redirect( add_query_arg(
 			array( 'page' => $this->page_slug, 'updated' => '1' ),
 			admin_url( 'admin.php' )
 		) );
 		exit;
+	}
+
+	// ── AJAX: refresh the source sitemap inventory (harvest-only) ───────
+
+	/**
+	 * Re-harvest the source sitemap and rewrite sitemap.json — no capture, no
+	 * browser. Backs the "Refresh sitemap data" button so the source page/type
+	 * counts can be brought current on demand.
+	 */
+	public function ajax_refresh_sitemap() {
+		if ( ! current_user_can( $this->capability() ) ) {
+			wp_send_json_error( array( 'message' => 'forbidden' ), 403 );
+		}
+		check_ajax_referer( $this->context->nonce_action( 'compare_ctl' ) );
+		@set_time_limit( 120 );
+
+		$cfg = $this->config();
+		if ( ! $cfg['ready'] ) {
+			wp_send_json_error( array( 'message' => 'capture tool unavailable (' . implode( ', ', $cfg['missing'] ) . ')' ) );
+		}
+		$harvest = $this->harvest_command( $cfg );
+		if ( ! $harvest ) {
+			wp_send_json_error( array( 'message' => 'no source sitemap configured' ) );
+		}
+		if ( ! is_dir( $cfg['out_dir'] ) ) {
+			wp_mkdir_p( $cfg['out_dir'] );
+		}
+		$out  = (string) shell_exec( $harvest );
+		$data = $this->sitemap_data( $cfg );
+		if ( ! $data ) {
+			wp_send_json_error( array( 'message' => 'harvest produced no data', 'raw' => mb_substr( $out, 0, 500 ) ) );
+		}
+		wp_send_json_success( array(
+			'summary' => $this->source_summary( $cfg ),
+			'total'   => isset( $data['total'] ) ? (int) $data['total'] : 0,
+			'types'   => isset( $data['types'] ) ? (array) $data['types'] : array(),
+		) );
 	}
 
 	// ── AJAX: refresh a set of paths (both sides) in place ──────────────
@@ -708,6 +907,11 @@ class Compare {
 		if ( $incremental ) {
 			$args = trim( $args . ' --incremental' );
 		}
+		// "typical layouts only": one representative per non-page type, all pages.
+		$typical = ! empty( $_POST['typical'] ) && 'false' !== $_POST['typical'] && '0' !== (string) $_POST['typical'];
+		if ( $typical ) {
+			$args = trim( $args . ' --typical' );
+		}
 
 		// Saved settings drive the capture: source sitemap (the URL scraper),
 		// source origin, target origin, plus the configured output dir.
@@ -733,11 +937,11 @@ class Compare {
 		// Detached: the inner shell writes its own PID into the lock first (so
 		// the status poller can check the process is actually alive — a died
 		// run's lock then reads as stale instantly), runs the wrapper, and
-		// drops the lock on exit. Prepend node's dir to PATH — php-fpm's
-		// spawned shell often has a minimal PATH without node, and the wrapper
-		// calls `node` bare.
+		// drops the lock on exit. PATH is set explicitly (node dir + standard
+		// bins) and bash is called by absolute path — a detached session can
+		// inherit a stripped PATH where even `bash` isn't found.
 		$inner = sprintf(
-			'echo $$ > %s; export PATH=%s:"$PATH"; bash %s %s > %s 2>&1; rm -f %s',
+			'echo $$ > %s; export PATH=%s:/usr/local/bin:/usr/bin:/bin:"$PATH"; /bin/bash %s %s > %s 2>&1; rm -f %s',
 			escapeshellarg( $lock ),
 			escapeshellarg( dirname( $cfg['node'] ) ),
 			escapeshellarg( $cfg['wrapper'] ),
@@ -745,8 +949,7 @@ class Compare {
 			escapeshellarg( $log ),
 			escapeshellarg( $lock )
 		);
-		$cmd = sprintf( 'nohup sh -c %s >/dev/null 2>&1 &', escapeshellarg( $inner ) );
-		shell_exec( $cmd );
+		$this->spawn_detached( $inner );
 
 		wp_send_json_success( array( 'started' => true, 'mode' => $mode, 'incremental' => $incremental ) );
 	}

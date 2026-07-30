@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.12.0 — 2026-07-29
+
+### Added
+- **Site Compare — "Refresh sitemap data"**: a button + `compare_refresh_sitemap` AJAX (and an auto-refresh on settings-save) run a harvest-only pass that writes a `sitemap.json` source inventory (per-type counts + path list) with no browser run, so the source page/type counts stay valid after the sitemap URL changes — decoupled from the last capture. `types()` + a new source-summary line prefer `sitemap.json` over the capture manifest.
+- **Site Compare — "typical layouts only"** toolbar option: passes `--typical` to the capture tool to shoot one representative per non-page sub-sitemap type (all pages kept) — one screenshot per layout instead of every CPT/post.
+
+### Fixed
+- **Detached capture never ran under php-fpm** (macOS/Local): `ajax_regenerate` spawned via `nohup … &`, which php-fpm reaps on request teardown (macOS ships no `setsid` binary) — so "Regenerate" silently produced nothing. New `spawn_detached()` detaches into a NEW session (`setsid` → python3 double-fork `os.setsid()` → `nohup` fallback); the inner command is hardened with an explicit `PATH` + absolute `/bin/bash` (a detached session inherits a stripped PATH).
+
 ## 0.11.0 — 2026-07-17
 
 ### Added
