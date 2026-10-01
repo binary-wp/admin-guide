@@ -193,44 +193,11 @@ function guide_render_my_crm_sync_status() {
 
 The integration auto-detects when `my-crm/my-crm.php` is active — its placeholders and tab templates appear in the builder automatically.
 
-## Site Compare (optional)
+## Extensions
 
-An opt-in tool page that renders a **source-vs-target visual comparison gallery**: every URL scraped from the source site's sitemap is captured full-height on both origins by a host-provided node capture tool and shown side by side. The package contributes the admin surface only — settings form, capture toolbar (regenerate / stop / status), same-origin gallery iframe, and a collapsible URL inventory table read from the gallery's `manifest.json`.
+Other plugins add screens, toolbar buttons, settings cards and tab sources through public hooks. See [HOOKS.md](HOOKS.md) for the full list.
 
-Completely inert unless you pass a `compare` array to `Plugin::boot()`:
-
-```php
-Plugin::boot( 'my_prefix', [
-    'compare' => [
-        // URL defaults — editable on the page itself; saved values (stored in
-        // the {prefix}_admin_guide_compare option) win over these:
-        'source_base'    => 'https://www.example.com',                    // production origin
-        'source_sitemap' => 'https://www.example.com/sitemap_index.xml',  // URL scraper input
-        'target_base'    => 'https://example.local',                      // default: home_url()
-
-        // Capture tool wiring (host-provided, node-based):
-        'wrapper'    => '/path/to/bin/visual-compare.sh',  // capture shell wrapper
-        'tool_dir'   => '/path/to/bin/visual-compare',     // default: wrapper minus '.sh'
-        'node_bin'   => '/usr/local/bin/node',             // default shown; falls back to `command -v node`
-        'output_rel' => 'migrate/compare',                 // gallery dir under uploads (default shown)
-
-        // Page:
-        'menu_label' => 'Site Compare',                    // default shown
-        'capability' => 'manage_options',                  // default: package capability
-    ],
-] );
-```
-
-The page registers as `?page={prefix}-admin-guide-compare` under the same `menu.parent` as the rest of the package.
-
-How the pieces fit:
-
-- **Settings** (three URL fields) are stored in the `{prefix}_admin_guide_compare` option; non-empty saved values override the boot defaults. Regenerate passes them to the wrapper as `--sitemap` / `--prod-base` / `--local-base` (plus `--out` for the uploads gallery dir), so the config actually drives capture.
-- **Regenerate** runs detached (`nohup`) with a PID lockfile in the gallery dir; the status poll checks the PID is a *live* process, so a crashed run recovers instantly instead of showing a phantom "capturing…". Modes: full sitemap, demo (`--demo`), per-sitemap-type (`--types <slug>`), plus a "first N" `--limit` and an incremental flag.
-- **The gallery** (`index.html` + `manifest.json` + screenshots) lives under `wp-content/uploads/{output_rel}/`, i.e. it's served by WordPress on the *same origin* as wp-admin. The iframe loads it with `?wp=1&ajax=<admin-ajax>&nonce=…&action={prefix}_admin_guide_compare_refresh` so the gallery's own per-page refresh buttons can call `admin-ajax.php` directly — no CORS, no control server.
-- **Graceful degradation**: if `shell_exec` is disabled or the wrapper / tool dir / node binary is missing, the settings form, read-only gallery, and URL inventory still work — only the capture toolbar is disabled, with a notice naming what's missing.
-
-Requirements for the interactive toolbar: `shell_exec` enabled, node, and a capture tool matching the wrapper contract (a `capture.mjs`-style tool with a `refresh-cli.mjs` sibling — see the Wolfe's Neck `bin/visual-compare/` reference implementation). This is a dev/migration aid; don't ship it enabled on production.
+Site Compare, a source-vs-target screenshot gallery for migrations, was built into this package up to 0.12. It now lives in [binary-wp/site-compare](https://github.com/binary-wp/site-compare) and attaches through those hooks.
 
 ## Exposed API
 

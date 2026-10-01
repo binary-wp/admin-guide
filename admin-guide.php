@@ -34,7 +34,6 @@ if ( ! class_exists( '\\BinaryWP\\AdminGuide\\Plugin' ) ) {
 	require_once __DIR__ . '/src/Generator.php';
 	require_once __DIR__ . '/src/Admin.php';
 	require_once __DIR__ . '/src/Viewer.php';
-	require_once __DIR__ . '/src/Compare.php';
 	require_once __DIR__ . '/src/Plugin.php';
 }
 

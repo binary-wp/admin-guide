@@ -51,9 +51,6 @@ class Plugin {
 	/** @var Viewer|null  null when opted out via menu.viewer = false */
 	public $viewer;
 
-	/** @var Compare|null  null unless the host passed a `compare` config array */
-	public $compare;
-
 	// ── Boot / Registry ─────────────────────────────────────────────────
 
 	/**
@@ -154,11 +151,14 @@ class Plugin {
 			$this->viewer = new Viewer( $context, $this->config, $this->generator );
 		}
 
-		// Site Compare — optional source-vs-target visual gallery tool page.
-		// Boots ONLY when the host passes a `compare` config array; absent
-		// config leaves the feature completely inert.
-		if ( isset( $context->raw_args['compare'] ) && is_array( $context->raw_args['compare'] ) ) {
-			$this->compare = new Compare( $context, $context->raw_args['compare'] );
+		// Site Compare moved to its own package in 0.13.0 and plugs in through
+		// the public hooks. Tell hosts still passing the old boot arg.
+		if ( isset( $context->raw_args['compare'] ) ) {
+			_doing_it_wrong(
+				__CLASS__ . '::boot',
+				'The `compare` boot arg was removed in 0.13.0. Require binary-wp/site-compare and call \\BinaryWP\\SiteCompare\\SiteCompare::attach( $prefix, $args ) instead.',
+				'0.13.0'
+			);
 		}
 
 		// Public trigger — see regenerate().

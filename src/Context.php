@@ -60,8 +60,6 @@ class Context {
 	 *                                         - parent (string)        parent menu slug (default tools.php)
 	 *                                         - viewer_label (string)  Admin Guide viewer submenu label (default 'Admin Guide')
 	 *                                         - viewer (bool)          false to skip registering the Viewer submenu (default true)
-	 *     @type array    $compare           Optional. Presence enables the Site Compare tool page
-	 *                                       (see Compare::__construct() for keys). Kept in raw_args.
 	 * }
 	 */
 	public function __construct( array $args ) {
