@@ -71,7 +71,7 @@ class Admin {
 	public function register_menu() {
 		$menu   = $this->context->menu_defaults;
 		$parent = ! empty( $menu['parent'] ) ? $menu['parent'] : 'tools.php';
-		$label  = isset( $menu['builder_label'] ) ? (string) $menu['builder_label'] : __( 'Guide Builder', 'binary-wp-admin-guide' );
+		$label  = isset( $menu['builder_label'] ) ? (string) $menu['builder_label'] : __( 'Guide Builder', 'admin-guide-builder' );
 
 		add_submenu_page(
 			$parent,
@@ -166,8 +166,10 @@ class Admin {
 	// ── Page Router ─────────────────────────────────────────────────────
 
 	public function render_page() {
-		if ( isset( $_GET['edit'] ) ) {
-			$this->render_editor_page( (int) $_GET['edit'] );
+		// Read-only routing; the editor form carries its own nonce.
+		$edit = isset( $_GET['edit'] ) ? absint( wp_unslash( $_GET['edit'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( $edit ) {
+			$this->render_editor_page( $edit );
 		} else {
 			$this->render_builder_page();
 		}
@@ -218,7 +220,7 @@ class Admin {
 			<h1>Guide Builder</h1>
 			<?php $this->render_builder_nav( $this->page_slug ); ?>
 
-			<?php if ( isset( $_GET['updated'] ) ) : ?>
+			<?php if ( isset( $_GET['updated'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only notice flag. ?>
 				<div class="notice notice-success is-dismissible"><p>Guide updated and regenerated.</p></div>
 			<?php endif; ?>
 
@@ -375,6 +377,7 @@ class Admin {
 			<form method="post">
 				<?php wp_nonce_field( $this->context->nonce_action() ); ?>
 				<input type="hidden" name="guide_builder_action" value="save_guide">
+				<input type="hidden" name="guide_instance" value="<?php echo esc_attr( $this->context->prefix ); ?>">
 				<input type="hidden" name="guide_post_id" value="<?php echo (int) $post_id; ?>">
 
 				<div class="guide-tab-meta" style="margin:15px 0">
@@ -420,19 +423,28 @@ class Admin {
 	// ── Editor Save (form POST) ─────────────────────────────────────────
 
 	public function handle_editor_save() {
-		if ( ! isset( $_POST['guide_builder_action'] ) || $_POST['guide_builder_action'] !== 'save_guide' ) {
+		// Runs on every admin_init, for every booted instance: bail unless
+		// this is the editor form of THIS instance.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- routing check; the nonce is verified next.
+		$action   = isset( $_POST['guide_builder_action'] ) ? sanitize_key( wp_unslash( $_POST['guide_builder_action'] ) ) : '';
+		$instance = isset( $_POST['guide_instance'] ) ? sanitize_key( wp_unslash( $_POST['guide_instance'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		if ( 'save_guide' !== $action || $instance !== $this->context->prefix ) {
 			return;
 		}
-		if ( ! $this->verify_nonce() || ! current_user_can( $this->context->capability ) ) {
-			return;
+		check_admin_referer( $this->context->nonce_action() );
+		$this->require_capability();
+
+		$post_id = isset( $_POST['guide_post_id'] ) ? absint( wp_unslash( $_POST['guide_post_id'] ) ) : 0;
+		$post    = $post_id ? get_post( $post_id ) : null;
+		if ( ! $post || $post->post_type !== $this->context->prefix . '_guide' ) {
+			wp_die( esc_html__( 'Guide page not found.', 'admin-guide-builder' ), 404 );
 		}
 
-		$post_id   = (int) $_POST['guide_post_id'];
-		$post      = get_post( $post_id );
-		$old_slug  = $post ? $post->post_name : '';
-		$content   = wp_kses_post( wp_unslash( $_POST['guide_content'] ) );
-		$new_label = sanitize_text_field( wp_unslash( $_POST['guide_label'] ?? '' ) );
-		$new_slug  = sanitize_key( $_POST['guide_slug'] ?? '' );
+		$old_slug  = $post->post_name;
+		$content   = isset( $_POST['guide_content'] ) ? wp_kses_post( wp_unslash( $_POST['guide_content'] ) ) : '';
+		$new_label = isset( $_POST['guide_label'] ) ? sanitize_text_field( wp_unslash( $_POST['guide_label'] ) ) : '';
+		$new_slug  = isset( $_POST['guide_slug'] ) ? sanitize_key( wp_unslash( $_POST['guide_slug'] ) ) : '';
 
 		// Convert pill spans back to plain {{tokens}}.
 		$content = preg_replace(
@@ -468,16 +480,20 @@ class Admin {
 	// ── AJAX Handlers ───────────────────────────────────────────────────
 
 	public function ajax_save_order() {
-		$this->verify_ajax();
+		check_ajax_referer( $this->context->nonce_action(), 'nonce' );
+		$this->require_capability();
 
-		$items = isset( $_POST['items'] ) ? (array) $_POST['items'] : array();
+		$items = isset( $_POST['items'] ) && is_array( $_POST['items'] ) ? map_deep( wp_unslash( $_POST['items'] ), 'absint' ) : array();
 		$clean = array();
 
 		foreach ( $items as $item ) {
+			if ( ! is_array( $item ) || empty( $item['id'] ) ) {
+				continue;
+			}
 			$clean[] = array(
 				'id'        => (int) $item['id'],
-				'parent_id' => (int) $item['parent_id'],
-				'position'  => (int) $item['position'],
+				'parent_id' => isset( $item['parent_id'] ) ? (int) $item['parent_id'] : 0,
+				'position'  => isset( $item['position'] ) ? (int) $item['position'] : 0,
 			);
 		}
 
@@ -488,11 +504,12 @@ class Admin {
 	}
 
 	public function ajax_add_guide() {
-		$this->verify_ajax();
+		check_ajax_referer( $this->context->nonce_action(), 'nonce' );
+		$this->require_capability();
 
-		$slug   = isset( $_POST['slug'] ) ? sanitize_key( $_POST['slug'] ) : '';
+		$slug   = isset( $_POST['slug'] ) ? sanitize_key( wp_unslash( $_POST['slug'] ) ) : '';
 		$label  = isset( $_POST['label'] ) ? sanitize_text_field( wp_unslash( $_POST['label'] ) ) : '';
-		$source = isset( $_POST['source'] ) ? sanitize_key( $_POST['source'] ) : 'custom';
+		$source = isset( $_POST['source'] ) ? sanitize_key( wp_unslash( $_POST['source'] ) ) : 'custom';
 		$group  = ! empty( $_POST['group'] );
 
 		if ( ! $slug || ! $label ) {
@@ -521,9 +538,10 @@ class Admin {
 	}
 
 	public function ajax_remove_guide() {
-		$this->verify_ajax();
+		check_ajax_referer( $this->context->nonce_action(), 'nonce' );
+		$this->require_capability();
 
-		$id = isset( $_POST['id'] ) ? (int) $_POST['id'] : 0;
+		$id = isset( $_POST['id'] ) ? absint( wp_unslash( $_POST['id'] ) ) : 0;
 		if ( ! $id ) {
 			wp_send_json_error( 'ID is required.' );
 		}
@@ -553,16 +571,16 @@ class Admin {
 	}
 
 	public function ajax_check_status() {
-		$this->verify_ajax();
+		check_ajax_referer( $this->context->nonce_action(), 'nonce' );
+		$this->require_capability();
 		wp_send_json_success( $this->integrations->check_external_status() );
 	}
 
 	// ── Export / Import ─────────────────────────────────────────────────
 
 	public function handle_export() {
-		if ( ! $this->verify_nonce() || ! current_user_can( $this->context->capability ) ) {
-			wp_die( 'Unauthorized.' );
-		}
+		check_admin_referer( $this->context->nonce_action() );
+		$this->require_capability();
 
 		$bundle   = $this->config->export();
 		$filename = $this->context->prefix . '-admin-guide-export-' . gmdate( 'Y-m-d' ) . '.json';
@@ -574,24 +592,27 @@ class Admin {
 	}
 
 	public function handle_import() {
-		if ( ! $this->verify_nonce() || ! current_user_can( $this->context->capability ) ) {
-			wp_die( 'Unauthorized.' );
+		check_admin_referer( $this->context->nonce_action() );
+		$this->require_capability();
+
+		$file = isset( $_FILES['guide_import_file'] ) && is_array( $_FILES['guide_import_file'] ) ? $_FILES['guide_import_file'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- validated field by field below.
+		$tmp  = isset( $file['tmp_name'] ) ? (string) $file['tmp_name'] : '';
+		if ( ! isset( $file['error'] ) || UPLOAD_ERR_OK !== (int) $file['error'] || '' === $tmp || ! is_uploaded_file( $tmp ) ) {
+			wp_die( esc_html__( 'No file uploaded.', 'admin-guide-builder' ) );
+		}
+		// A guide bundle is a few hundred KB at most; refuse anything absurd before reading it.
+		if ( isset( $file['size'] ) && (int) $file['size'] > 5 * MB_IN_BYTES ) {
+			wp_die( esc_html__( 'The file is too large to be a guide export.', 'admin-guide-builder' ) );
 		}
 
-		if ( empty( $_FILES['guide_import_file']['tmp_name'] ) ) {
-			wp_die( 'No file uploaded.' );
-		}
-
-		$json = file_get_contents( $_FILES['guide_import_file']['tmp_name'] );
-		$data = json_decode( $json, true );
-
+		$data = json_decode( (string) file_get_contents( $tmp ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local upload temp file.
 		if ( ! is_array( $data ) ) {
-			wp_die( 'Invalid JSON.' );
+			wp_die( esc_html__( 'The file is not valid JSON.', 'admin-guide-builder' ) );
 		}
 
 		$result = $this->config->import( $data );
 		if ( is_wp_error( $result ) ) {
-			wp_die( $result->get_error_message() );
+			wp_die( esc_html( $result->get_error_message() ) );
 		}
 
 		$this->generator->generate();
@@ -602,15 +623,19 @@ class Admin {
 
 	// ── Helpers ─────────────────────────────────────────────────────────
 
-	private function verify_ajax() {
-		check_ajax_referer( $this->context->nonce_action(), 'nonce' );
-		if ( ! current_user_can( $this->context->capability ) ) {
-			wp_send_json_error( 'Permission denied.' );
+	/**
+	 * Stop unless the current user holds the instance capability. Callers
+	 * verify the nonce themselves first (check_admin_referer /
+	 * check_ajax_referer), so it is visible at each entry point.
+	 */
+	private function require_capability() {
+		if ( current_user_can( $this->context->capability ) ) {
+			return;
 		}
-	}
-
-	private function verify_nonce() {
-		return wp_verify_nonce( $_REQUEST['_wpnonce'] ?? '', $this->context->nonce_action() );
+		if ( wp_doing_ajax() ) {
+			wp_send_json_error( 'Permission denied.', 403 );
+		}
+		wp_die( esc_html__( 'You are not allowed to do that.', 'admin-guide-builder' ), 403 );
 	}
 
 	private function resolve_source_label( $guide ) {
@@ -912,7 +937,7 @@ class Admin {
 			<h1>Guide Builder</h1>
 			<?php $this->render_builder_nav( $this->context->page_slug( 'settings' ) ); ?>
 
-			<?php if ( isset( $_GET['imported'] ) ) : ?>
+			<?php if ( isset( $_GET['imported'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only notice flag. ?>
 				<div class="notice notice-success is-dismissible"><p>Guide imported successfully.</p></div>
 			<?php endif; ?>
 

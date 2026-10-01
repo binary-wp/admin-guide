@@ -167,7 +167,7 @@ Create `guide-integrations/my-crm.json`:
     ],
     "placeholders": {
         "{{my_crm_sync_status}}": {
-            "callback": "guide_render_my_crm_sync_status",
+            "callback": "my_crm_guide_sync_status",
             "description": "Current CRM sync status"
         },
         "{{my_crm_settings_link}}": {
@@ -183,7 +183,7 @@ Create `guide-integrations/my-crm.json`:
 Then create `guide-integrations/functions/my-crm.php` with the render callback:
 
 ```php
-function guide_render_my_crm_sync_status() {
+function my_crm_guide_sync_status() {
     $last_sync = get_option( 'my_crm_last_sync' );
     return $last_sync
         ? sprintf( 'Last sync: %s', human_time_diff( $last_sync ) . ' ago' )
@@ -237,13 +237,13 @@ Actions:
 
 ## Translations
 
-The package ships with a translation template (`languages/binary-wp-admin-guide.pot`) and a Czech translation (`cs_CZ`). Text domain: `binary-wp-admin-guide`, loaded on `init` priority 1.
+The package ships with a translation template (`languages/admin-guide-builder.pot`) and a Czech translation (`cs_CZ`). Text domain: `admin-guide-builder`, loaded on `init` priority 1 (a WordPress.org language pack first, then the bundled file).
 
 To contribute a translation:
 
-1. Copy `languages/binary-wp-admin-guide.pot` to `languages/binary-wp-admin-guide-{locale}.po`
+1. Copy `languages/admin-guide-builder.pot` to `languages/admin-guide-builder-{locale}.po`
 2. Translate each `msgstr` (use [Poedit](https://poedit.net/) or any PO editor)
-3. Compile: `msgfmt --check --output-file=languages/binary-wp-admin-guide-{locale}.mo languages/binary-wp-admin-guide-{locale}.po`
+3. Compile: `msgfmt --check --output-file=languages/admin-guide-builder-{locale}.mo languages/admin-guide-builder-{locale}.po`
 4. Submit a PR with both `.po` and `.mo` files
 
 ### Regenerating the `.pot` template
@@ -260,10 +260,10 @@ xgettext \
   --package-name='Admin Guide' --package-version='0.11.0' \
   --msgid-bugs-address='https://github.com/binary-wp/admin-guide/issues' \
   --add-comments=translators: \
-  --output=languages/binary-wp-admin-guide.pot \
+  --output=languages/admin-guide-builder.pot \
   src/*.php integrations/functions/*.php admin-guide.php
 ```
 
 ## License
 
-MIT
+GPL-2.0-or-later (see `LICENSE`). Releases up to 0.12.0 were published under MIT.

@@ -27,7 +27,10 @@ Works as standalone plugin, or as Composer dependency in a plugin/theme with per
 - WordPress coding standards (snake_case functions, prefixed hooks)
 - All hooks fire both generic and prefix-scoped variants — always through `Hooks::action()` / `Hooks::filter()`, never raw `do_action`; document new ones in `HOOKS.md`
 - Integration files are JSON; render functions live in `integrations/functions/{slug}.php`
-- Text domain: `binary-wp-admin-guide`
+- Text domain: `admin-guide-builder` (= WordPress.org slug; `Plugin::TEXT_DOMAIN`). CSS classes keep the old `binary-wp-admin-guide-*` names on purpose — hosts style them
+- Global functions in `integrations/functions/` use the `admin_guide_builder_` prefix (WordPress.org requires unique prefixes)
+- `vendor/bin/phpcs` must stay clean (security, i18n, compat sniffs — `phpcs.xml.dist`)
+- License: GPL-2.0-or-later
 
 ## Build / dev
 
@@ -47,5 +50,5 @@ When bumping version, update ALL of these:
 2. `admin-guide.php` — `Plugin::boot()` `'package_version'` value
 3. `README.md` — code example `'package_version'` value
 4. `README.md` — xgettext `--package-version` flag
-5. `languages/binary-wp-admin-guide.pot` — `Project-Id-Version` header
+5. `languages/admin-guide-builder.pot` — `Project-Id-Version` header
 6. `CHANGELOG.md` — new entry at top

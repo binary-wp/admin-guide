@@ -7,7 +7,7 @@
 	"docs_url": "https://theeventscalendar.com/knowledgebase/",
 	"placeholders": {
 		"{{tec_categories_list}}": {
-			"callback": "guide_render_tec_categories_list",
+			"callback": "admin_guide_builder_render_tec_categories_list",
 			"description": "Event category terms with admin links"
 		}
 	}

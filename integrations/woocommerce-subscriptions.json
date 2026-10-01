@@ -10,7 +10,7 @@
 	],
 	"placeholders": {
 		"{{woo_subscriptions_products_table}}": {
-			"callback": "guide_render_woo_subscriptions_products_table",
+			"callback": "admin_guide_builder_render_woo_subscriptions_products_table",
 			"description": "Subscription products grouped by type"
 		}
 	}

@@ -5,7 +5,7 @@
  * Two services: Payments (connection + enabled) and POS/Sync (sync mode).
  */
 
-function guide_check_square_connection() {
+function admin_guide_builder_check_square_connection() {
 	if ( ! class_exists( 'WooCommerce' ) ) {
 		return array( 'status' => 'error', 'message' => 'WooCommerce not active' );
 	}
@@ -44,7 +44,7 @@ function guide_check_square_connection() {
 	return array( 'status' => 'ok', 'message' => 'Connected — Production' );
 }
 
-function guide_check_square_sync() {
+function admin_guide_builder_check_square_sync() {
 	if ( ! class_exists( 'WooCommerce' ) ) {
 		return array( 'status' => 'error', 'message' => 'WooCommerce not active' );
 	}

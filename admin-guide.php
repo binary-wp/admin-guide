@@ -1,11 +1,14 @@
 <?php
 /**
- * Plugin Name: Admin Guide
- * Description: JSON-driven admin guide builder for WordPress. Install as a standalone plugin, or require as a Composer dependency from your own plugin/theme.
+ * Plugin Name: Admin Guide Builder
+ * Plugin URI:  https://github.com/binary-wp/admin-guide
+ * Description: Write a guide for the people who edit your site, right in wp-admin. Placeholders fill it with live facts about the site.
  * Version:     0.12.0
  * Author:      BinaryWP
- * License:     MIT
- * Text Domain: binary-wp-admin-guide
+ * Author URI:  https://github.com/binary-wp
+ * License:     GPL-2.0-or-later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain: admin-guide-builder
  * Domain Path: /languages
  * Requires PHP: 7.4
  * Requires at least: 5.8
@@ -61,15 +64,22 @@ add_action( 'plugins_loaded', function () {
 		return; // Not running as a standalone plugin — don't auto-boot.
 	}
 
+	// Snapshots go to uploads, never into this plugin's own folder: an update
+	// replaces the folder, and WordPress.org forbids writing there. The
+	// folder name carries a site-specific hash so it can't be guessed —
+	// uploads is public, and the Generator's deny files don't help on nginx.
+	$uploads = wp_upload_dir( null, false );
+
 	\BinaryWP\AdminGuide\Plugin::boot( 'admin_guide', array(
 		'package_path'    => __DIR__ . '/',
 		'package_url'     => plugin_dir_url( __FILE__ ),
 		'package_version' => '0.12.0',
+		'guide_dir'       => trailingslashit( $uploads['basedir'] ) . 'admin-guide-builder-' . substr( wp_hash( 'admin-guide-builder' ), 0, 12 ) . '/',
 		'menu'            => array(
 			// By default the viewer/builder installs under its own top-level item.
 			// Hosts can override via filter or by booting their own instance.
 			'parent'        => '',
-			'builder_label' => 'Admin Guide',
+			'builder_label' => 'Guide Builder', // the Viewer is 'Admin Guide'
 		),
 	) );
 }, 5 );

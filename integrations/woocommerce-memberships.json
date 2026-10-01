@@ -11,7 +11,7 @@
 	],
 	"placeholders": {
 		"{{woo_memberships_plans_section}}": {
-			"callback": "guide_render_woo_memberships_plans_section",
+			"callback": "admin_guide_builder_render_woo_memberships_plans_section",
 			"description": "Membership plans with restrictions and linked products"
 		}
 	}

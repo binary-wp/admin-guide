@@ -15,6 +15,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Generator {
 
+	// File IO note: snapshots are written with plain PHP calls, not
+	// WP_Filesystem. On hosts where WP_Filesystem needs FTP credentials it
+	// would silently fail during a background regenerate; the output dir is
+	// a local directory this package created and owns.
+
 	/** @var Context */
 	private $context;
 
@@ -54,6 +59,8 @@ class Generator {
 	public function generate() {
 		wp_mkdir_p( $this->output_dir );
 		wp_mkdir_p( $this->html_dir );
+		$this->protect_dir( $this->output_dir );
+		$this->protect_dir( $this->html_dir );
 
 		$templates = $this->config->get_all_templates();
 		if ( ! $templates ) {
@@ -105,7 +112,7 @@ class Generator {
 			$resolved_html = $this->placeholders->resolve( $html );
 
 			// Write .html snapshot for fast admin rendering.
-			file_put_contents( $this->html_dir . $safe . '.html', $resolved_html );
+			file_put_contents( $this->html_dir . $safe . '.html', $resolved_html ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- see class note on file IO.
 
 			// Write .md (convert resolved HTML → Markdown) for portable reading.
 			if ( $converter ) {
@@ -113,7 +120,7 @@ class Generator {
 			} else {
 				$md = $resolved_html;
 			}
-			file_put_contents( $this->output_dir . $safe . '.md', $md );
+			file_put_contents( $this->output_dir . $safe . '.md', $md ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- see class note on file IO.
 			$written[] = $safe;
 		}
 
@@ -125,6 +132,27 @@ class Generator {
 		 * @param Context  $context
 		 */
 		Hooks::action( $this->context, 'generated', $written, $this->output_dir, $this->context );
+	}
+
+	/**
+	 * Keep snapshots from being served directly: they are admin-only content,
+	 * and the output dir may sit under uploads or a plugin folder, both
+	 * web-reachable. index.php stops directory listing everywhere; .htaccess
+	 * denies the rest on Apache. (nginx ignores .htaccess — the standalone
+	 * plugin also uses an unguessable folder name for that case.)
+	 *
+	 * @param string $dir Directory with trailing slash.
+	 */
+	private function protect_dir( $dir ) {
+		if ( ! is_dir( $dir ) ) {
+			return;
+		}
+		if ( ! file_exists( $dir . 'index.php' ) ) {
+			file_put_contents( $dir . 'index.php', "<?php\n// Silence is golden.\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- see class note on file IO.
+		}
+		if ( ! file_exists( $dir . '.htaccess' ) ) {
+			file_put_contents( $dir . '.htaccess', "# Admin Guide Builder snapshots are read through wp-admin only.\n<IfModule mod_authz_core.c>\n\tRequire all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\n\tDeny from all\n</IfModule>\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- see class note on file IO.
+		}
 	}
 
 	/**
@@ -161,7 +189,7 @@ class Generator {
 	public function read_tab( $slug ) {
 		$file = $this->html_dir . sanitize_key( $slug ) . '.html';
 		if ( file_exists( $file ) ) {
-			return file_get_contents( $file );
+			return file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local, package-owned file.
 		}
 		return '';
 	}

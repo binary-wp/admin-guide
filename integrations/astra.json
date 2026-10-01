@@ -10,11 +10,11 @@
 	],
 	"placeholders": {
 		"{{astra_color_palette}}": {
-			"callback": "guide_render_astra_color_palette",
+			"callback": "admin_guide_builder_render_astra_color_palette",
 			"description": "Astra global color palette with swatches and CSS variable names"
 		},
 		"{{astra_typography}}": {
-			"callback": "guide_render_astra_typography",
+			"callback": "admin_guide_builder_render_astra_typography",
 			"description": "Astra typography settings (body + headings) with font families and sizes"
 		}
 	}

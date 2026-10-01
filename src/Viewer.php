@@ -58,7 +58,7 @@ class Viewer {
 	public function register_menu() {
 		$menu   = $this->context->menu_defaults;
 		$parent = ! empty( $menu['parent'] ) ? $menu['parent'] : 'tools.php';
-		$label  = isset( $menu['viewer_label'] ) ? (string) $menu['viewer_label'] : __( 'Admin Guide', 'binary-wp-admin-guide' );
+		$label  = isset( $menu['viewer_label'] ) ? (string) $menu['viewer_label'] : __( 'Admin Guide', 'admin-guide-builder' );
 
 		add_submenu_page(
 			$parent,
@@ -77,12 +77,15 @@ class Viewer {
 
 		$tabs = $this->config->get_tabs(); // top-level only: [ slug => label ]
 
+		// Read-only navigation and notice params; nothing here changes state.
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
 		$active = isset( $_GET['section'] ) ? sanitize_key( wp_unslash( (string) $_GET['section'] ) ) : '';
 		if ( $active === '' || ! isset( $tabs[ $active ] ) ) {
 			$active = (string) array_key_first( $tabs );
 		}
 
-		$regenerated = isset( $_GET['regen'] ) && '1' === (string) $_GET['regen'];
+		$regenerated = isset( $_GET['regen'] ) && '1' === sanitize_key( wp_unslash( $_GET['regen'] ) );
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		$regen_url   = admin_url( 'admin-post.php' );
 
 		wp_enqueue_style(
@@ -104,7 +107,7 @@ class Viewer {
 			<h1 style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
 				<?php
 				$menu  = $this->context->menu_defaults;
-				$title = isset( $menu['viewer_label'] ) ? (string) $menu['viewer_label'] : __( 'Admin Guide', 'binary-wp-admin-guide' );
+				$title = isset( $menu['viewer_label'] ) ? (string) $menu['viewer_label'] : __( 'Admin Guide', 'admin-guide-builder' );
 				echo esc_html( $title );
 				?>
 				<span class="binary-wp-admin-guide-viewer__actions">
@@ -119,14 +122,14 @@ class Viewer {
 						<?php if ( $active ) : ?>
 							<input type="hidden" name="return_section" value="<?php echo esc_attr( $active ); ?>">
 						<?php endif; ?>
-						<button type="submit" class="button button-small">↻ <?php esc_html_e( 'Regenerate', 'binary-wp-admin-guide' ); ?></button>
+						<button type="submit" class="button button-small">↻ <?php esc_html_e( 'Regenerate', 'admin-guide-builder' ); ?></button>
 					</form>
 				</span>
 			</h1>
 
 			<?php if ( $regenerated ) : ?>
 				<div class="notice notice-success is-dismissible">
-					<p><?php esc_html_e( 'Guide regenerated.', 'binary-wp-admin-guide' ); ?></p>
+					<p><?php esc_html_e( 'Guide regenerated.', 'admin-guide-builder' ); ?></p>
 				</div>
 			<?php endif; ?>
 
@@ -136,8 +139,8 @@ class Viewer {
 						<?php
 						printf(
 							/* translators: %s: link to the Guide Builder admin page */
-							esc_html__( 'No guide tabs yet. Use %s to create some.', 'binary-wp-admin-guide' ),
-							'<a href="' . esc_url( admin_url( 'admin.php?page=' . $this->context->page_slug( 'builder' ) ) ) . '">' . esc_html__( 'Guide Builder', 'binary-wp-admin-guide' ) . '</a>'
+							esc_html__( 'No guide tabs yet. Use %s to create some.', 'admin-guide-builder' ),
+							'<a href="' . esc_url( admin_url( 'admin.php?page=' . $this->context->page_slug( 'builder' ) ) ) . '">' . esc_html__( 'Guide Builder', 'admin-guide-builder' ) . '</a>'
 						);
 						?>
 					</em>
@@ -176,7 +179,7 @@ class Viewer {
 		$target   = $active;
 
 		if ( ! empty( $children ) ) {
-			$requested = isset( $_GET['child'] ) ? sanitize_key( wp_unslash( (string) $_GET['child'] ) ) : '';
+			$requested = isset( $_GET['child'] ) ? sanitize_key( wp_unslash( (string) $_GET['child'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only navigation.
 			if ( $requested === '' || ! isset( $children[ $requested ] ) ) {
 				$requested = (string) array_key_first( $children );
 			}
@@ -217,7 +220,7 @@ class Viewer {
 		 */
 		$html = (string) Hooks::filter( $this->context, 'tab_content', $this->generator->read_tab( $target ), $target, $this->context );
 		if ( $html === '' ) {
-			echo '<p><em>' . esc_html__( 'No content generated for this tab yet. Click Regenerate.', 'binary-wp-admin-guide' ) . '</em></p>';
+			echo '<p><em>' . esc_html__( 'No content generated for this tab yet. Click Regenerate.', 'admin-guide-builder' ) . '</em></p>';
 			return;
 		}
 		// Trusted — generated from stored CPT content + registered placeholder callbacks.
@@ -233,7 +236,7 @@ class Viewer {
 	private function get_toolbar_actions() {
 		$actions = array(
 			'builder' => array(
-				'label'      => __( 'Guide Builder', 'binary-wp-admin-guide' ),
+				'label'      => __( 'Guide Builder', 'admin-guide-builder' ),
 				'url'        => admin_url( 'admin.php?page=' . $this->context->page_slug( 'builder' ) ),
 				'capability' => $this->context->capability,
 			),
@@ -264,7 +267,7 @@ class Viewer {
 
 	public function handle_regenerate() {
 		if ( ! current_user_can( $this->context->capability ) ) {
-			wp_die( esc_html__( 'Forbidden', 'binary-wp-admin-guide' ), 403 );
+			wp_die( esc_html__( 'Forbidden', 'admin-guide-builder' ), 403 );
 		}
 		check_admin_referer( $this->context->nonce_action( 'regenerate_viewer' ) );
 

@@ -110,7 +110,7 @@ class Integrations {
 
 			foreach ( $data['external'] as $ext ) {
 				$check    = ! empty( $ext['check'] ) ? $ext['check'] : '';
-				$fn_name  = 'guide_check_' . $check;
+				$fn_name  = 'admin_guide_builder_check_' . $check;
 				$status   = 'unknown';
 				$message  = '';
 
@@ -199,6 +199,18 @@ class Integrations {
 							return '<a href="' . esc_url( admin_url( $url ) ) . '">' . esc_html( $label ) . '</a>';
 						}, $name, $desc );
 
+					} elseif ( $type === 'link' ) {
+						// External page (docs, vendor screenshots) opened in a new tab.
+						// Bundled integrations link out instead of embedding remote
+						// images — the guide must not load assets from third parties.
+						$href  = isset( $def['url'] ) ? $def['url'] : '';
+						$label = isset( $def['label'] ) ? $def['label'] : $href;
+						$desc  = isset( $def['description'] ) ? $def['description'] : $label;
+
+						$ph->register( $token, function () use ( $href, $label ) {
+							return '<a href="' . esc_url( $href ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $label ) . ' &#8599;</a>';
+						}, $name, $desc );
+
 					} elseif ( $type === 'image' ) {
 						$img_url = isset( $def['url'] ) ? $def['url'] : '';
 						$img_alt = isset( $def['alt'] ) ? $def['alt'] : '';
@@ -255,8 +267,8 @@ class Integrations {
 			// Post types / taxonomies (from default.json: tab_sources).
 			if ( ! empty( $data['tab_sources']['post_types'] ) ) {
 				$items = array();
-				if ( function_exists( 'guide_get_content_post_types' ) ) {
-					foreach ( guide_get_content_post_types() as $obj ) {
+				if ( function_exists( 'admin_guide_builder_get_content_post_types' ) ) {
+					foreach ( admin_guide_builder_get_content_post_types() as $obj ) {
 						$items[] = array(
 							'slug'     => $obj->name,
 							'label'    => $obj->labels->name,
@@ -325,14 +337,14 @@ class Integrations {
 		if ( isset( $this->integration_dirs[ $tab_slug ] ) ) {
 			$file = $this->integration_dirs[ $tab_slug ] . 'templates/' . $tab_slug . '.html';
 			if ( file_exists( $file ) ) {
-				return file_get_contents( $file );
+				return file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local, package-owned file.
 			}
 		}
 
 		// 2. Check bundled package templates dir.
 		$file = $this->bundled_dir . 'templates/' . $tab_slug . '.html';
 		if ( file_exists( $file ) ) {
-			return file_get_contents( $file );
+			return file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local, package-owned file.
 		}
 
 		// 3. Search any source dir for a matching template file.
@@ -340,7 +352,7 @@ class Integrations {
 		foreach ( $dirs as $dir ) {
 			$file = $dir . 'templates/' . $tab_slug . '.html';
 			if ( file_exists( $file ) ) {
-				return file_get_contents( $file );
+				return file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local, package-owned file.
 			}
 		}
 
@@ -389,7 +401,7 @@ class Integrations {
 				continue;
 			}
 			foreach ( glob( $dir . '*.json' ) as $file ) {
-				$json = json_decode( file_get_contents( $file ), true );
+				$json = json_decode( file_get_contents( $file ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local, package-owned file.
 				if ( ! is_array( $json ) || empty( $json['slug'] ) ) {
 					continue;
 				}

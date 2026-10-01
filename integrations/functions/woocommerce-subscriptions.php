@@ -1,5 +1,5 @@
 <?php
-function guide_render_woo_subscriptions_products_table() {
+function admin_guide_builder_render_woo_subscriptions_products_table() {
 	if ( ! function_exists( 'wc_get_products' ) ) {
 		return '<p><em>WooCommerce not active.</em></p>';
 	}

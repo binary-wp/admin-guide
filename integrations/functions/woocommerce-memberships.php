@@ -1,5 +1,5 @@
 <?php
-function guide_render_woo_memberships_plans_section() {
+function admin_guide_builder_render_woo_memberships_plans_section() {
 	if ( ! function_exists( 'wc_memberships_get_membership_plans' ) ) {
 		return '<p><em>WooCommerce Memberships not active.</em></p>';
 	}

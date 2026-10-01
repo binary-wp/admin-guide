@@ -3,7 +3,7 @@
  * Status checker for WP Mail SMTP integration.
  */
 
-function guide_check_wp_mail_smtp_mailer() {
+function admin_guide_builder_check_wp_mail_smtp_mailer() {
 	$options = get_option( 'wp_mail_smtp', array() );
 	$mailer  = isset( $options['mail']['mailer'] ) ? $options['mail']['mailer'] : '';
 

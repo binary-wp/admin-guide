@@ -49,6 +49,7 @@ do_action( 'admin_guide_builder/regenerate', 'myplugin' ); // one instance
 | `tab_content` | `string $html` | `string $slug, Context` | A tab's HTML right before the Viewer prints it, on every page view. Use it for per-request or per-user output. Never put per-user logic in a placeholder; that output is frozen into one shared snapshot. |
 | `viewer_actions` | `array` | `Context` | Buttons beside the Viewer title, keyed by id: `[ 'label' => …, 'url' => …, 'capability' => … ]`. The built-in one is `builder`. |
 | `screens` | `array` | `Context` | Admin screens contributed by extensions; see below. |
+| `content_type_registrars` | `array` | `Context` | “Registered by” labels in `{{wp_content_types_table}}`: post-type slug or slug prefix → label, e.g. `'newsletter' => 'My Plugin'`. |
 
 ### Adding a screen
 

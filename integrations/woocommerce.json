@@ -17,7 +17,7 @@
 	],
 	"placeholders": {
 		"{{woo_payment_methods_table}}": {
-			"callback": "guide_render_woo_payment_methods_table",
+			"callback": "admin_guide_builder_render_woo_payment_methods_table",
 			"description": "Active payment gateways"
 		},
 		"{{woo_emails_settings_link}}": {

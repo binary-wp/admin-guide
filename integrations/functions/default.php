@@ -13,23 +13,23 @@
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
-function guide_current_plugin() {
+function admin_guide_builder_current_plugin() {
 	return class_exists( '\\BinaryWP\\AdminGuide\\Plugin' ) ? \BinaryWP\AdminGuide\Plugin::first() : null;
 }
 
-function guide_current_config() {
-	$plugin = guide_current_plugin();
+function admin_guide_builder_current_config() {
+	$plugin = admin_guide_builder_current_plugin();
 	return $plugin ? $plugin->config : null;
 }
 
-function guide_current_integrations() {
-	$plugin = guide_current_plugin();
+function admin_guide_builder_current_integrations() {
+	$plugin = admin_guide_builder_current_plugin();
 	return $plugin ? $plugin->integrations : null;
 }
 
 // ── Content type pool ───────────────────────────────────────────────
 
-function guide_get_content_post_types( $group = 'all' ) {
+function admin_guide_builder_get_content_post_types( $group = 'all' ) {
 	static $cache = null;
 
 	if ( $cache === null ) {
@@ -64,13 +64,22 @@ function guide_get_content_post_types( $group = 'all' ) {
 
 // ── Registered CPTs ─────────────────────────────────────────────────
 
-function guide_render_wp_content_types_table() {
+function admin_guide_builder_render_wp_content_types_table() {
 	$registrar_map = array(
-		'tribe_'     => 'The Events Calendar',
-		'product'    => 'WooCommerce',
-		'shop_'      => 'WooCommerce',
-		'newsletter' => 'Heisey Functionality Pack',
+		'tribe_'  => 'The Events Calendar',
+		'product' => 'WooCommerce',
+		'shop_'   => 'WooCommerce',
 	);
+	$plugin = admin_guide_builder_current_plugin();
+	if ( $plugin ) {
+		/**
+		 * Filter the "Registered by" labels in the content-types table.
+		 *
+		 * @param array<string,string> $registrar_map Post-type slug or slug prefix => label.
+		 * @param Context              $context
+		 */
+		$registrar_map = (array) \BinaryWP\AdminGuide\Hooks::filter( $plugin->context, 'content_type_registrars', $registrar_map, $plugin->context );
+	}
 
 	$acf_cpt_slugs = array();
 	if ( function_exists( 'acf_get_post_type_post' ) ) {
@@ -87,11 +96,11 @@ function guide_render_wp_content_types_table() {
 	$special       = array();
 
 	foreach ( array( 'content', 'special' ) as $group ) {
-		foreach ( guide_get_content_post_types( $group ) as $obj ) {
+		foreach ( admin_guide_builder_get_content_post_types( $group ) as $obj ) {
 			$registrar = 'WordPress';
 			if ( ! $obj->_builtin ) {
 				if ( in_array( $obj->name, $acf_cpt_slugs, true ) ) {
-					$registrar = 'Heisey CPT';
+					$registrar = 'ACF';
 				} else {
 					foreach ( $registrar_map as $prefix => $label ) {
 						if ( strpos( $obj->name, $prefix ) === 0 || $obj->name === $prefix ) {
@@ -108,16 +117,17 @@ function guide_render_wp_content_types_table() {
 
 	ob_start();
 	echo '<h4 id="content-types">Content Types</h4>';
-	guide_render_cpt_table( $content_types );
+	admin_guide_builder_render_cpt_table( $content_types );
 	if ( $special ) {
 		echo '<h4 id="special-content-types">Special Content Types</h4>';
-		guide_render_cpt_table( $special );
+		admin_guide_builder_render_cpt_table( $special );
 	}
 	return ob_get_clean();
 }
 
-function guide_render_cpt_table( $entries ) {
-	$config = guide_current_config();
+function admin_guide_builder_render_cpt_table( $entries ) {
+	$plugin = admin_guide_builder_current_plugin();
+	$config = $plugin ? $plugin->config : null;
 	$tabs   = $config ? $config->get_tabs() : array();
 
 	echo '<table class="widefat fixed striped" style="max-width:800px;margin-bottom:20px"><thead><tr>';
@@ -139,13 +149,13 @@ function guide_render_cpt_table( $entries ) {
 
 		$guide_link = '&mdash;';
 		if ( isset( $tabs[ $slug ] ) && $config && $config->has_template( $slug ) ) {
-			$guide_link = '<a href="' . esc_url( admin_url( 'admin.php?page=hfp-guide&tab=' . $slug ) ) . '">' . esc_html( $tabs[ $slug ] ) . '</a>';
+			$guide_link = '<a href="' . esc_url( admin_url( 'admin.php?page=' . $plugin->context->page_slug( 'viewer' ) . '&section=' . $slug ) ) . '">' . esc_html( $tabs[ $slug ] ) . '</a>';
 		}
 
 		echo '<tr>';
 		echo '<td><a href="' . esc_url( $edit_url ) . '"><strong>' . esc_html( $obj->labels->name ) . '</strong></a></td>';
-		echo '<td>' . ( $tax_links ? implode( ', ', $tax_links ) : '&mdash;' ) . '</td>';
-		echo '<td>' . $guide_link . '</td>';
+		echo '<td>' . wp_kses_post( $tax_links ? implode( ', ', $tax_links ) : '&mdash;' ) . '</td>';
+		echo '<td>' . wp_kses_post( $guide_link ) . '</td>';
 		echo '<td>' . esc_html( $registrar ) . '</td>';
 		echo '</tr>';
 	}
@@ -154,12 +164,12 @@ function guide_render_cpt_table( $entries ) {
 
 // ── Other CPTs ──────────────────────────────────────────────────────
 
-function guide_render_wp_other_content_table() {
-	$config = guide_current_config();
+function admin_guide_builder_render_wp_other_content_table() {
+	$config = admin_guide_builder_current_config();
 	$tabs   = $config ? $config->get_tabs() : array();
 	$others = array();
 
-	foreach ( guide_get_content_post_types( 'content' ) as $obj ) {
+	foreach ( admin_guide_builder_get_content_post_types( 'content' ) as $obj ) {
 		// Skip CPTs that already have a dedicated tab with template content.
 		if ( isset( $tabs[ $obj->name ] ) && $config && $config->has_template( $obj->name ) ) {
 			continue;
@@ -185,7 +195,7 @@ function guide_render_wp_other_content_table() {
 		}
 		echo '<tr>';
 		echo '<td><a href="' . esc_url( $edit_url ) . '"><strong>' . esc_html( $obj->labels->name ) . '</strong></a> <code>' . esc_html( $obj->name ) . '</code></td>';
-		echo '<td>' . ( $tax_links ? implode( ', ', $tax_links ) : '&mdash;' ) . '</td>';
+		echo '<td>' . wp_kses_post( $tax_links ? implode( ', ', $tax_links ) : '&mdash;' ) . '</td>';
 		echo '</tr>';
 	}
 	echo '</tbody></table>';
@@ -194,7 +204,7 @@ function guide_render_wp_other_content_table() {
 
 // ── Editor detection ────────────────────────────────────────────────
 
-function guide_detect_wp_editors() {
+function admin_guide_builder_detect_wp_editors() {
 	static $result = null;
 	if ( $result !== null ) return $result;
 
@@ -208,7 +218,7 @@ function guide_detect_wp_editors() {
 		$elementor_cpts = (array) get_option( 'elementor_cpt_support', array( 'page', 'post' ) );
 	}
 
-	foreach ( guide_get_content_post_types() as $obj ) {
+	foreach ( admin_guide_builder_get_content_post_types() as $obj ) {
 		$sample = get_posts( array( 'post_type' => $obj->name, 'numberposts' => 1, 'post_status' => 'any' ) );
 		if ( ! $sample ) continue;
 
@@ -231,7 +241,7 @@ function guide_detect_wp_editors() {
 	return $result;
 }
 
-function guide_render_type_links( $entries ) {
+function admin_guide_builder_render_type_links( $entries ) {
 	$links = array();
 	foreach ( $entries as $e ) {
 		$url = $e['slug'] === 'post' ? admin_url( 'edit.php' ) : admin_url( 'edit.php?post_type=' . $e['slug'] );
@@ -240,25 +250,25 @@ function guide_render_type_links( $entries ) {
 	return implode( ', ', $links );
 }
 
-function guide_render_wp_editors_list() {
-	$detected = guide_detect_wp_editors();
+function admin_guide_builder_render_wp_editors_list() {
+	$detected = admin_guide_builder_detect_wp_editors();
 	$items    = array();
 
 	if ( $detected['classic'] ) {
 		$items[] = '<li><strong>Classic Editor</strong> — single rich-text area with formatting toolbar. '
 			. '<a href="https://wordpress.org/documentation/article/first-steps-with-wordpress-classic/" target="_blank">Documentation &rarr;</a>'
-			. '<br><span class="description">Used by: ' . guide_render_type_links( $detected['classic_types'] ) . '</span></li>';
+			. '<br><span class="description">Used by: ' . admin_guide_builder_render_type_links( $detected['classic_types'] ) . '</span></li>';
 	}
 	if ( $detected['block'] ) {
 		$items[] = '<li><strong>Block Editor</strong> (Gutenberg) — block-based editor with drag & drop. '
 			. '<a href="https://wordpress.org/documentation/article/wordpress-block-editor/" target="_blank">Documentation &rarr;</a>'
-			. '<br><span class="description">Used by: ' . guide_render_type_links( $detected['block_types'] ) . '</span></li>';
+			. '<br><span class="description">Used by: ' . admin_guide_builder_render_type_links( $detected['block_types'] ) . '</span></li>';
 	}
 	if ( $detected['elementor'] ) {
 		$items[] = '<li><strong>Elementor</strong> — visual page builder for complex layouts. '
 			. '<a href="https://elementor.com/help/" target="_blank">Documentation &rarr;</a>'
-			. '<br><span class="description">Enabled for: ' . guide_render_type_links( $detected['elementor_types'] ) . '</span>'
-			. guide_render_non_elementor_posts( $detected['elementor_types'] )
+			. '<br><span class="description">Enabled for: ' . admin_guide_builder_render_type_links( $detected['elementor_types'] ) . '</span>'
+			. admin_guide_builder_render_non_elementor_posts( $detected['elementor_types'] )
 			. '</li>';
 	}
 
@@ -268,7 +278,7 @@ function guide_render_wp_editors_list() {
 /**
  * For each Elementor-enabled post type, list published posts NOT built with Elementor.
  */
-function guide_render_non_elementor_posts( $elementor_types ) {
+function admin_guide_builder_render_non_elementor_posts( $elementor_types ) {
 	global $wpdb;
 
 	$sections = array();
@@ -278,6 +288,8 @@ function guide_render_non_elementor_posts( $elementor_types ) {
 		$pt_label = $entry['label'];
 
 		// Find published posts of this type that do NOT have _elementor_edit_mode = 'builder'.
+		// Runs only while snapshots are generated, not on page views.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$posts = $wpdb->get_results( $wpdb->prepare(
 			"SELECT p.ID, p.post_title FROM {$wpdb->posts} p
 			WHERE p.post_type = %s
@@ -308,16 +320,16 @@ function guide_render_non_elementor_posts( $elementor_types ) {
 	return implode( '', $sections );
 }
 
-function guide_render_wp_editor_name_text() {
-	$editors = guide_detect_wp_editors();
+function admin_guide_builder_render_wp_editor_name_text() {
+	$editors = admin_guide_builder_detect_wp_editors();
 	$names   = array();
 	if ( $editors['classic'] ) $names[] = 'Classic Editor';
 	if ( $editors['block'] )   $names[] = 'Block Editor';
 	return $names ? implode( ' or ', $names ) : 'WordPress Editor';
 }
 
-function guide_render_wp_allowed_editors_text() {
-	$editors = guide_detect_wp_editors();
+function admin_guide_builder_render_wp_allowed_editors_text() {
+	$editors = admin_guide_builder_detect_wp_editors();
 	$parts   = array();
 
 	if ( $editors['classic'] ) {
@@ -334,7 +346,7 @@ function guide_render_wp_allowed_editors_text() {
 
 // ── General / misc ──────────────────────────────────────────────────
 
-function guide_render_wp_posts_page_link() {
+function admin_guide_builder_render_wp_posts_page_link() {
 	$page_id = (int) get_option( 'page_for_posts' );
 	if ( $page_id ) {
 		return '<a href="' . esc_url( get_permalink( $page_id ) ) . '">' . esc_html( get_the_title( $page_id ) ) . '</a>';
@@ -342,8 +354,8 @@ function guide_render_wp_posts_page_link() {
 	return '<code>' . esc_url( home_url( '/' ) ) . '</code>';
 }
 
-function guide_render_wp_post_categories_list() {
-	$cats = get_terms( array( 'taxonomy' => 'category', 'hide_empty' => false, 'orderby' => 'meta_value_num', 'meta_key' => 'order', 'order' => 'ASC' ) );
+function admin_guide_builder_render_wp_post_categories_list() {
+	$cats = get_terms( array( 'taxonomy' => 'category', 'hide_empty' => false, 'orderby' => 'meta_value_num', 'meta_key' => 'order', 'order' => 'ASC' ) ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- term meta, small table, generate time only.
 	if ( is_wp_error( $cats ) || empty( $cats ) ) {
 		$cats = get_terms( array( 'taxonomy' => 'category', 'hide_empty' => false, 'orderby' => 'term_order', 'order' => 'ASC' ) );
 	}
@@ -362,7 +374,7 @@ function guide_render_wp_post_categories_list() {
 	return ob_get_clean();
 }
 
-function guide_render_wp_settings_dashboards_table() {
+function admin_guide_builder_render_wp_settings_dashboards_table() {
 	$dashboards = array();
 
 	if ( class_exists( 'WooCommerce' ) ) {
@@ -388,8 +400,8 @@ function guide_render_wp_settings_dashboards_table() {
 	return ob_get_clean();
 }
 
-function guide_render_wp_external_services_table() {
-	$integrations = guide_current_integrations();
+function admin_guide_builder_render_wp_external_services_table() {
+	$integrations = admin_guide_builder_current_integrations();
 	if ( ! $integrations ) {
 		return '<p><em>Integration registry not available.</em></p>';
 	}
@@ -423,7 +435,7 @@ function guide_render_wp_external_services_table() {
 		}
 
 		foreach ( $ext_services as $i => $ext ) {
-			echo '<tr data-integration="' . esc_attr( $slug ) . '" data-service-index="' . $i . '">';
+			echo '<tr data-integration="' . esc_attr( $slug ) . '" data-service-index="' . absint( $i ) . '">';
 			// Show integration name only on first row.
 			if ( $i === 0 ) {
 				echo '<td rowspan="' . count( $ext_services ) . '"><strong>' . esc_html( $data['name'] ) . '</strong></td>';
@@ -438,7 +450,7 @@ function guide_render_wp_external_services_table() {
 				$settings = $data['settings_url']
 					? '<a href="' . esc_url( admin_url( $data['settings_url'] ) ) . '">Settings &rarr;</a>'
 					: '&mdash;';
-				echo '<td rowspan="' . count( $ext_services ) . '">' . $settings . '</td>';
+				echo '<td rowspan="' . count( $ext_services ) . '">' . wp_kses_post( $settings ) . '</td>';
 			}
 			echo '</tr>';
 		}

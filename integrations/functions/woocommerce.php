@@ -1,6 +1,6 @@
 <?php
 
-function guide_render_woo_payment_methods_table() {
+function admin_guide_builder_render_woo_payment_methods_table() {
 	if ( ! function_exists( 'WC' ) ) {
 		return '<p><em>WooCommerce not active.</em></p>';
 	}
@@ -22,7 +22,7 @@ function guide_render_woo_payment_methods_table() {
 	return ob_get_clean();
 }
 
-function guide_check_woo_payment_gateway() {
+function admin_guide_builder_check_woo_payment_gateway() {
 	if ( ! function_exists( 'WC' ) ) {
 		return array( 'status' => 'error', 'message' => 'WooCommerce not active' );
 	}

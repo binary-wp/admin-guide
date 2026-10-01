@@ -10,7 +10,7 @@
 /**
  * Render the Astra global color palette as a visual swatch table.
  */
-function guide_render_astra_color_palette() {
+function admin_guide_builder_render_astra_color_palette() {
 	$settings = get_option( 'astra-settings', array() );
 	$palette  = isset( $settings['global-color-palette']['palette'] ) ? $settings['global-color-palette']['palette'] : array();
 
@@ -25,7 +25,7 @@ function guide_render_astra_color_palette() {
 
 	foreach ( $palette as $index => $hex ) {
 		$var  = '--ast-global-color-' . (int) $index;
-		$text_color = guide_astra_contrast_color( $hex );
+		$text_color = admin_guide_builder_astra_contrast_color( $hex );
 		printf(
 			'<tr>'
 			. '<td><span style="display:inline-block;width:36px;height:24px;border-radius:3px;border:1px solid #dcdcde;background:%s;vertical-align:middle;text-align:center;line-height:24px;font-size:10px;color:%s">%d</span></td>'
@@ -47,7 +47,7 @@ function guide_render_astra_color_palette() {
 /**
  * Render Astra typography settings (body + headings).
  */
-function guide_render_astra_typography() {
+function admin_guide_builder_render_astra_typography() {
 	$settings = get_option( 'astra-settings', array() );
 
 	$body_family    = ! empty( $settings['body-font-family'] ) ? $settings['body-font-family'] : 'System default';
@@ -62,7 +62,7 @@ function guide_render_astra_typography() {
 	echo '<tbody>';
 
 	// Body.
-	$body_size = guide_astra_font_size( $settings, 'body-font-size' );
+	$body_size = admin_guide_builder_astra_font_size( $settings, 'body-font-size' );
 	printf(
 		'<tr><td><strong>Body</strong></td><td style="font-family:%s">%s</td><td>%s</td><td>%s</td></tr>',
 		esc_attr( $body_family ),
@@ -79,14 +79,14 @@ function guide_render_astra_typography() {
 		$h_weight = ! empty( $settings[ 'font-weight-h' . $i ] )
 			? $settings[ 'font-weight-h' . $i ]
 			: $heading_weight;
-		$h_size   = guide_astra_font_size( $settings, 'font-size-h' . $i );
+		$h_size   = admin_guide_builder_astra_font_size( $settings, 'font-size-h' . $i );
 
 		// Skip if identical to global heading and no per-heading size.
 		$show_family = ( $h_family !== $heading_family ) ? $h_family : '';
 
 		printf(
 			'<tr><td><strong>H%d</strong></td><td style="font-family:%s">%s</td><td>%s</td><td>%s</td></tr>',
-			$i,
+			absint( $i ),
 			esc_attr( $h_family ),
 			esc_html( $show_family ?: $h_family ),
 			esc_html( $h_weight ),
@@ -105,7 +105,7 @@ function guide_render_astra_typography() {
  * @param string $key      Setting key (e.g. 'font-size-h1').
  * @return string Formatted size string or '—'.
  */
-function guide_astra_font_size( $settings, $key ) {
+function admin_guide_builder_astra_font_size( $settings, $key ) {
 	if ( empty( $settings[ $key ] ) ) {
 		return '—';
 	}
@@ -129,7 +129,7 @@ function guide_astra_font_size( $settings, $key ) {
  * @param string $hex Hex color (#RGB or #RRGGBB).
  * @return string '#000' or '#fff'.
  */
-function guide_astra_contrast_color( $hex ) {
+function admin_guide_builder_astra_contrast_color( $hex ) {
 	$hex = ltrim( $hex, '#' );
 	if ( strlen( $hex ) === 3 ) {
 		$hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];

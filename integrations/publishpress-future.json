@@ -7,13 +7,13 @@
 	"docs_url": "https://publishpress.com/future/",
 	"placeholders": {
 		"{{pp_future_metabox_screenshot}}": {
-			"callback": "guide_render_pp_future_metabox_screenshot",
+			"callback": "admin_guide_builder_render_pp_future_metabox_screenshot",
 			"description": "Editor-aware screenshot of the Future Action metabox (Block or Classic)"
 		},
 		"{{pp_future_quickedit_screenshot}}": {
-			"type": "image",
-			"url": "https://ps.w.org/post-expirator/assets/screenshot-2.png",
-			"alt": "PublishPress Future — Quick Edit and Bulk Edit",
+			"type": "link",
+			"url": "https://wordpress.org/plugins/post-expirator/#screenshots",
+			"label": "Quick Edit and Bulk Edit — screenshots on WordPress.org",
 			"description": "Screenshot of Quick Edit / Bulk Edit with Future Actions"
 		}
 	}

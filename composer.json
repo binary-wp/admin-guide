@@ -2,12 +2,19 @@
     "name": "binary-wp/admin-guide",
     "description": "JSON-driven admin guide builder for WordPress. Works as a standalone plugin or as a Composer dependency in another plugin/theme.",
     "type": "library",
-    "license": "MIT",
-    "keywords": ["wordpress", "admin", "guide", "documentation", "builder", "help"],
+    "license": "GPL-2.0-or-later",
+    "keywords": [
+        "wordpress",
+        "admin",
+        "guide",
+        "documentation",
+        "builder",
+        "help"
+    ],
     "authors": [
         {
             "name": "BinaryWP",
-            "homepage": "https://github.com/wasilosos"
+            "homepage": "https://github.com/binary-wp"
         }
     ],
     "require": {
@@ -21,8 +28,15 @@
         }
     },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
     },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "require-dev": {
+        "phpcompatibility/phpcompatibility-wp": "*",
+        "wp-coding-standards/wpcs": "^3"
+    }
 }

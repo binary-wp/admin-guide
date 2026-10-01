@@ -1,5 +1,5 @@
 <?php
-function guide_render_tec_categories_list() {
+function admin_guide_builder_render_tec_categories_list() {
 	if ( ! taxonomy_exists( 'tribe_events_cat' ) ) {
 		return '<p><em>Event categories taxonomy not registered.</em></p>';
 	}

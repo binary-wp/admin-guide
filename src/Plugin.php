@@ -27,6 +27,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Plugin {
 
+	/** Text domain — equals the WordPress.org slug, so language packs load for it. */
+	const TEXT_DOMAIN = 'admin-guide-builder';
+
 	/** @var Plugin[] prefix => instance */
 	private static $instances = array();
 
@@ -67,6 +70,10 @@ class Plugin {
 			return self::$instances[ $prefix ];
 		}
 
+		if ( ! self::$instances ) {
+			add_action( 'init', array( __CLASS__, 'load_textdomain' ), 1 );
+		}
+
 		$args['prefix']  = $prefix;
 		$context         = new Context( $args );
 		$instance        = new self( $context );
@@ -83,6 +90,27 @@ class Plugin {
 		Hooks::action( $context, 'booted', $instance, $context );
 
 		return $instance;
+	}
+
+	/**
+	 * Load translations: a WordPress.org language pack first (it wins on
+	 * conflicts), then the .mo bundled in languages/. The bundled file is the
+	 * only source when the package ships inside another plugin via Composer,
+	 * where WordPress's just-in-time loader never looks.
+	 *
+	 * @internal Hooked on init.
+	 */
+	public static function load_textdomain() {
+		$locale = determine_locale();
+		$file   = self::TEXT_DOMAIN . '-' . $locale . '.mo';
+
+		if ( is_readable( WP_LANG_DIR . '/plugins/' . $file ) ) {
+			load_textdomain( self::TEXT_DOMAIN, WP_LANG_DIR . '/plugins/' . $file, $locale );
+		}
+		$bundled = dirname( __DIR__ ) . '/languages/' . $file;
+		if ( is_readable( $bundled ) ) {
+			load_textdomain( self::TEXT_DOMAIN, $bundled, $locale );
+		}
 	}
 
 	/**
@@ -246,7 +274,7 @@ class Plugin {
 		$old = $this->context->prefix . '_guide_page';
 		$new = $this->context->prefix . '_guide';
 		// Use direct UPDATE — preserves post-id, postmeta, revisions.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-off migration; caches are flushed below.
 		$count = $wpdb->update(
 			$wpdb->posts,
 			array( 'post_type' => $new ),

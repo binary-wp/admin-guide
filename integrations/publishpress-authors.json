@@ -19,15 +19,15 @@
 			"description": "Link to Author Categories admin listing"
 		},
 		"{{pp_authors_categories_screenshot}}": {
-			"type": "image",
-			"url": "https://publishpress.com/wp-content/uploads/2024/01/author-categories-screen-1024x365.png",
-			"alt": "Author Categories admin screen",
+			"type": "link",
+			"url": "https://publishpress.com/knowledge-base/author-categories/",
+			"label": "Author Categories — screenshots in the PublishPress docs",
 			"description": "Screenshot of the Author Categories admin interface"
 		},
 		"{{pp_authors_metabox_screenshot}}": {
-			"type": "image",
-			"url": "https://publishpress.com/wp-content/uploads/2024/01/post-edit-categories.png",
-			"alt": "Author Categories metabox on post editor",
+			"type": "link",
+			"url": "https://publishpress.com/knowledge-base/author-categories/",
+			"label": "Authors box in the post editor — PublishPress docs",
 			"description": "Screenshot of the Authors metabox on the post editor"
 		}
 	}
