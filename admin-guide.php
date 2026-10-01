@@ -3,7 +3,7 @@
  * Plugin Name: Admin Guide Builder
  * Plugin URI:  https://github.com/binary-wp/admin-guide
  * Description: Write a guide for the people who edit your site, right in wp-admin. Placeholders fill it with live facts about the site.
- * Version:     0.12.0
+ * Version:     0.13.0
  * Author:      BinaryWP
  * Author URI:  https://github.com/binary-wp
  * License:     GPL-2.0-or-later
@@ -73,7 +73,7 @@ add_action( 'plugins_loaded', function () {
 	\BinaryWP\AdminGuide\Plugin::boot( 'admin_guide', array(
 		'package_path'    => __DIR__ . '/',
 		'package_url'     => plugin_dir_url( __FILE__ ),
-		'package_version' => '0.12.0',
+		'package_version' => '0.13.0',
 		'guide_dir'       => trailingslashit( $uploads['basedir'] ) . 'admin-guide-builder-' . substr( wp_hash( 'admin-guide-builder' ), 0, 12 ) . '/',
 		'menu'            => array(
 			// By default the viewer/builder installs under its own top-level item.

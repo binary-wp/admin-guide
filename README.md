@@ -47,7 +47,7 @@ All options are optional. Full example with overrides:
 Plugin::boot( 'my_prefix', [
     'package_path'    => __DIR__ . '/vendor/binary-wp/admin-guide/',
     'package_url'     => plugin_dir_url( __FILE__ ) . 'vendor/binary-wp/admin-guide/',
-    'package_version' => '0.11.0',
+    'package_version' => '0.13.0',
     'guide_dir'       => __DIR__ . '/guide/',
     'capability'      => 'manage_options',
     'menu'            => [
@@ -257,7 +257,7 @@ xgettext \
   --keyword=_x:1,2c --keyword=esc_html_x:1,2c \
   --keyword=_n:1,2 --keyword=_nx:1,2,4c \
   --copyright-holder='BinaryWP' \
-  --package-name='Admin Guide' --package-version='0.11.0' \
+  --package-name='Admin Guide Builder' --package-version='0.13.0' \
   --msgid-bugs-address='https://github.com/binary-wp/admin-guide/issues' \
   --add-comments=translators: \
   --output=languages/admin-guide-builder.pot \

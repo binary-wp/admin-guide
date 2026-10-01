@@ -1,5 +1,52 @@
 # Changelog
 
+## 0.13.0 — 2026-10-01
+
+Renamed to **Admin Guide Builder** and prepared for WordPress.org: GPL license, a public hook API for extensions, Site Compare moved out, and a security pass.
+
+### Breaking
+- **Site Compare moved to [`binary-wp/site-compare`](https://github.com/binary-wp/site-compare).**
+  - `src/Compare.php` and the `compare` boot arg are gone. Passing `compare` to `Plugin::boot()` now logs `_doing_it_wrong`.
+  - Migrate with `SiteCompare::attach( $prefix, $args )`, using the same array.
+  - Page slug, option and AJAX action names are unchanged.
+- **Text domain** `binary-wp-admin-guide` → `admin-guide-builder`. The language files are renamed to match.
+- **Integration functions** `guide_*` → `admin_guide_builder_*` (31 functions). Status checks are looked up as `admin_guide_builder_check_{check}`.
+
+### Added
+- **Public hook API** (`src/Hooks.php`, documented in `HOOKS.md`). Every hook fires as `admin_guide_builder/{name}` and as `{prefix}/admin_guide_builder/{name}`.
+  - Actions: `booted`, `content_changed` (also fires for seeders and imports), `before_generate`, `generated`, `enqueue_assets`, `settings_sections`.
+  - Filters: `capability`, `tab_template` (generate time), `tab_content` (Viewer, every page view), `viewer_actions`, `screens` (extension admin screens: `menu` / `builder` / `hidden`), `content_type_registrars`.
+  - `Plugin::regenerate()` and the `admin_guide_builder/regenerate` action (optional prefix argument).
+  - `Admin::render_builder_nav()` is public.
+- **Placeholder type `link`:** an external link that opens in a new tab.
+- **WordPress.org files:** `readme.txt`; `uninstall.php` (standalone instance only); `LICENSE`; `phpcs.xml.dist` with WPCS security, i18n and compatibility sniffs (dev dependency; `vendor/bin/phpcs` is clean).
+
+### Changed
+- **License** MIT → GPL-2.0-or-later. Releases up to 0.12.0 remain MIT.
+- **Standalone snapshots** go to `uploads/admin-guide-builder-<site hash>/` instead of the plugin's own folder, which an update wipes. Every output directory gets `index.php` and an Apache deny `.htaccess`.
+- **Standalone builder menu label** is now "Guide Builder"; it used to share "Admin Guide" with the Viewer.
+- **Bundled PublishPress integrations** link to the vendor docs instead of embedding remote screenshots.
+
+### Deprecated
+- `guide_builder/{placeholders,integrations,system_tabs,guide_dir}` and their `{prefix}/guide_builder/…` forms. They still fire, through `do_action_deprecated()` / `apply_filters_deprecated()`.
+
+### Fixed
+- **Translations never loaded:** the package had no `load_textdomain`. It now loads on `init` 1: a WordPress.org language pack first, then the bundled `.mo`.
+- **"User Guide" links** in `{{wp_content_types_table}}` pointed to `page=hfp-guide&tab=`. They now point to the instance Viewer with `&section=`.
+- **Heisey leftovers** removed from bundled code: `{{hfp_crm_section}}` in the `general` system template, the "Heisey Functionality Pack" registrar label, and "Heisey CPT" for ACF post types (now "ACF").
+- **Multi-instance editor save:** the save handler now checks which instance a form belongs to, so a form from another instance no longer ends in `wp_die`.
+
+### Security
+- Every handler checks its nonce inline (`check_admin_referer` / `check_ajax_referer`). The `verify_*` helpers are removed.
+- Superglobals are unslashed and sanitized. The `items` order payload is cast with `map_deep( absint )`.
+- Import validates the upload: error code, `is_uploaded_file()`, 5 MB cap. The error message is escaped.
+- Integration output is escaped.
+
+### Upgrading a host
+- Rename `{prefix}/guide_builder/placeholders` → `{prefix}/admin_guide_builder/placeholders`. The old name still works but logs a deprecation notice under `WP_DEBUG`.
+- Bump the constraint to `^0.13`.
+- If the host's `guide/` folder is tracked in git, ignore or commit the new `guide/index.php` and `guide/.htaccess`.
+
 ## 0.12.0 — 2026-07-29
 
 ### Added
