@@ -27,6 +27,7 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 // class file directly in dependency order.
 if ( ! class_exists( '\\BinaryWP\\AdminGuide\\Plugin' ) ) {
 	require_once __DIR__ . '/src/Context.php';
+	require_once __DIR__ . '/src/Hooks.php';
 	require_once __DIR__ . '/src/Placeholders.php';
 	require_once __DIR__ . '/src/Integrations.php';
 	require_once __DIR__ . '/src/Config.php';

@@ -25,7 +25,7 @@ Works as standalone plugin, or as Composer dependency in a plugin/theme with per
 
 - PHP 7.4+ compatibility required
 - WordPress coding standards (snake_case functions, prefixed hooks)
-- All hooks fire both generic and prefix-scoped variants
+- All hooks fire both generic and prefix-scoped variants — always through `Hooks::action()` / `Hooks::filter()`, never raw `do_action`; document new ones in `HOOKS.md`
 - Integration files are JSON; render functions live in `integrations/functions/{slug}.php`
 - Text domain: `binary-wp-admin-guide`
 

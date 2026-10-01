@@ -4,7 +4,7 @@
  *
  * Per-instance registry: register, resolve, get.
  * Placeholders registered via Integrations (JSON-driven) and via
- * the guide_builder/placeholders hook (modules/external).
+ * the admin_guide_builder/placeholders hook (modules/external).
  */
 
 namespace BinaryWP\AdminGuide;
@@ -31,8 +31,7 @@ class Placeholders {
 		$this->context = $context;
 
 		// Let modules register via per-instance hook (fires early).
-		do_action( 'guide_builder/placeholders', $this, $context );
-		do_action( $context->prefix . '/guide_builder/placeholders', $this, $context );
+		Hooks::action( $context, 'placeholders', $this, $context );
 	}
 
 	/** Used by Plugin to inject the integrations instance. */

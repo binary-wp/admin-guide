@@ -91,6 +91,14 @@ class Viewer {
 			array(),
 			$this->context->package_version
 		);
+
+		/**
+		 * Fires when a guide screen enqueues its assets.
+		 *
+		 * @param string  $screen  'viewer', 'builder', 'editor', 'instructions', 'settings', or an extension screen slug.
+		 * @param Context $context
+		 */
+		Hooks::action( $this->context, 'enqueue_assets', 'viewer', $this->context );
 		?>
 		<div class="wrap binary-wp-admin-guide-viewer">
 			<h1 style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
@@ -100,11 +108,11 @@ class Viewer {
 				echo esc_html( $title );
 				?>
 				<span class="binary-wp-admin-guide-viewer__actions">
-					<?php if ( current_user_can( $this->context->capability ) ) : ?>
-						<a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=' . $this->context->page_slug( 'builder' ) ) ); ?>">
-							<?php esc_html_e( 'Guide Builder', 'binary-wp-admin-guide' ); ?>
+					<?php foreach ( $this->get_toolbar_actions() as $action ) : ?>
+						<a class="button button-small" href="<?php echo esc_url( $action['url'] ); ?>">
+							<?php echo esc_html( $action['label'] ); ?>
 						</a>
-					<?php endif; ?>
+					<?php endforeach; ?>
 					<form method="post" action="<?php echo esc_url( $regen_url ); ?>" style="margin:0;">
 						<?php wp_nonce_field( $this->context->nonce_action( 'regenerate_viewer' ) ); ?>
 						<input type="hidden" name="action" value="<?php echo esc_attr( $this->context->action_name( 'regenerate_viewer' ) ); ?>">
@@ -196,13 +204,60 @@ class Viewer {
 			echo '<br class="clear" />';
 		}
 
-		$html = $this->generator->read_tab( $target );
+		/**
+		 * Filter a tab's HTML right before the Viewer prints it.
+		 *
+		 * Runs on every page view, after the snapshot is read — the place for
+		 * per-request or per-user output. (Placeholders resolve once, at
+		 * generate time, so they must not branch on the current user.)
+		 *
+		 * @param string  $html    Snapshot HTML ('' when none was generated).
+		 * @param string  $slug    Tab slug being shown.
+		 * @param Context $context
+		 */
+		$html = (string) Hooks::filter( $this->context, 'tab_content', $this->generator->read_tab( $target ), $target, $this->context );
 		if ( $html === '' ) {
 			echo '<p><em>' . esc_html__( 'No content generated for this tab yet. Click Regenerate.', 'binary-wp-admin-guide' ) . '</em></p>';
 			return;
 		}
 		// Trusted — generated from stored CPT content + registered placeholder callbacks.
 		echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	}
+
+	/**
+	 * Buttons shown next to the Viewer title, filtered so extensions can add
+	 * their own screens (e.g. a migration tool) beside the Guide Builder.
+	 *
+	 * @return array<int,array{label:string,url:string}>
+	 */
+	private function get_toolbar_actions() {
+		$actions = array(
+			'builder' => array(
+				'label'      => __( 'Guide Builder', 'binary-wp-admin-guide' ),
+				'url'        => admin_url( 'admin.php?page=' . $this->context->page_slug( 'builder' ) ),
+				'capability' => $this->context->capability,
+			),
+		);
+
+		/**
+		 * Filter the Viewer toolbar buttons.
+		 *
+		 * @param array<string,array{label:string,url:string,capability?:string}> $actions Keyed by id.
+		 * @param Context $context
+		 */
+		$actions = (array) Hooks::filter( $this->context, 'viewer_actions', $actions, $this->context );
+
+		$visible = array();
+		foreach ( $actions as $action ) {
+			if ( empty( $action['label'] ) || empty( $action['url'] ) ) {
+				continue;
+			}
+			$cap = ! empty( $action['capability'] ) ? (string) $action['capability'] : $this->context->capability;
+			if ( current_user_can( $cap ) ) {
+				$visible[] = array( 'label' => (string) $action['label'], 'url' => (string) $action['url'] );
+			}
+		}
+		return $visible;
 	}
 
 	// ── Regenerate handler ──────────────────────────────────────────────

@@ -36,8 +36,7 @@ class Generator {
 		$this->placeholders = $placeholders;
 
 		$guide_dir = $context->guide_dir;
-		$guide_dir = apply_filters( 'guide_builder/guide_dir', $guide_dir, $context );
-		$guide_dir = apply_filters( $context->prefix . '/guide_builder/guide_dir', $guide_dir, $context );
+		$guide_dir = Hooks::filter( $context, 'guide_dir', $guide_dir, $context );
 
 		$this->output_dir = trailingslashit( $guide_dir );
 		$this->html_dir   = $this->output_dir . 'html/';
@@ -61,6 +60,16 @@ class Generator {
 			return;
 		}
 
+		/**
+		 * Fires before the guide snapshots are (re)written.
+		 *
+		 * @param array<string,string> $templates slug => raw template HTML.
+		 * @param Context              $context
+		 */
+		Hooks::action( $this->context, 'before_generate', $templates, $this->context );
+
+		$written = array();
+
 		$converter = null;
 		if ( class_exists( 'League\\HTMLToMarkdown\\HtmlConverter' ) ) {
 			$converter = new \League\HTMLToMarkdown\HtmlConverter( array(
@@ -79,6 +88,19 @@ class Generator {
 				continue;
 			}
 
+			/**
+			 * Filter a tab's raw template before placeholders resolve.
+			 *
+			 * Lets a host source a tab body from elsewhere (a file, a remote
+			 * doc) while keeping the snapshot pipeline: whatever is returned
+			 * still gets {{placeholders}} resolved and is written to disk.
+			 *
+			 * @param string  $html    Stored template HTML.
+			 * @param string  $slug    Tab slug.
+			 * @param Context $context
+			 */
+			$html = (string) Hooks::filter( $this->context, 'tab_template', $html, $slug, $this->context );
+
 			// Resolve {{placeholders}} in HTML template.
 			$resolved_html = $this->placeholders->resolve( $html );
 
@@ -92,7 +114,17 @@ class Generator {
 				$md = $resolved_html;
 			}
 			file_put_contents( $this->output_dir . $safe . '.md', $md );
+			$written[] = $safe;
 		}
+
+		/**
+		 * Fires after the guide snapshots are written.
+		 *
+		 * @param string[] $slugs   Slugs whose snapshots were written.
+		 * @param string   $dir     Output directory.
+		 * @param Context  $context
+		 */
+		Hooks::action( $this->context, 'generated', $written, $this->output_dir, $this->context );
 	}
 
 	/**

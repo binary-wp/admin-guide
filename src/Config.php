@@ -151,6 +151,7 @@ class Config {
 				'menu_order'  => (int) $item['position'],
 			) );
 		}
+		$this->changed( 'order', array( 'items' => $items ) );
 	}
 
 	/**
@@ -190,6 +191,7 @@ class Config {
 		}
 
 		update_post_meta( $post_id, '_guide_source', sanitize_key( $source ) );
+		$this->changed( 'added', array( 'slug' => $slug, 'post_id' => $post_id ) );
 
 		return $post_id;
 	}
@@ -214,7 +216,9 @@ class Config {
 			wp_delete_post( $child->ID, true );
 		}
 
-		return wp_delete_post( $post->ID, true );
+		$deleted = wp_delete_post( $post->ID, true );
+		$this->changed( 'removed', array( 'slug' => $post->post_name, 'post_id' => $post->ID ) );
+		return $deleted;
 	}
 
 	/**
@@ -235,7 +239,9 @@ class Config {
 			$update['post_title'] = sanitize_text_field( $new_label );
 		}
 
-		return wp_update_post( $update );
+		$result = wp_update_post( $update );
+		$this->changed( 'renamed', array( 'slug' => $old_slug, 'new_slug' => $new_slug, 'post_id' => $post->ID ) );
+		return $result;
 	}
 
 	/**
@@ -258,6 +264,7 @@ class Config {
 				) );
 			}
 		}
+		$this->changed( 'order', array( 'slugs' => $slugs ) );
 	}
 
 	// ── Public API: templates ───────────────────────────────────────────
@@ -279,10 +286,12 @@ class Config {
 			return false;
 		}
 
-		return wp_update_post( array(
+		$result = wp_update_post( array(
 			'ID'           => $post->ID,
 			'post_content' => wp_kses_post( $html ),
 		) );
+		$this->changed( 'template', array( 'slug' => $slug, 'post_id' => $post->ID ) );
+		return $result;
 	}
 
 	/**
@@ -389,7 +398,28 @@ class Config {
 			}
 		}
 
+		$this->changed( 'imported', array( 'slugs' => array_keys( $slug_to_id ) ) );
 		return true;
+	}
+
+	/**
+	 * Announce a change to the stored guide.
+	 *
+	 * Fired from the storage layer, so it covers the builder UI, seeders and
+	 * imports alike. Snapshots are NOT regenerated here — callers decide when.
+	 *
+	 * @param string $what 'added', 'removed', 'renamed', 'template', 'order' or 'imported'.
+	 * @param array  $data Change details (slug, post_id, …).
+	 */
+	public function changed( $what, array $data = array() ) {
+		/**
+		 * Fires after guide tabs are added, removed, renamed, edited, reordered or imported.
+		 *
+		 * @param string  $what    Kind of change.
+		 * @param array   $data    Change details.
+		 * @param Context $context
+		 */
+		Hooks::action( $this->context, 'content_changed', $what, $data, $this->context );
 	}
 
 	// ── Migration ───────────────────────────────────────────────────────

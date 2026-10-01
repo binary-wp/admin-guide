@@ -75,6 +75,16 @@ class Plugin {
 		$instance        = new self( $context );
 		self::$instances[ $prefix ] = $instance;
 
+		/**
+		 * Fires once an instance is fully wired and registered, so
+		 * Plugin::get( $prefix ) works inside the callback. Extensions that
+		 * need the component graph (config, generator, admin, …) start here.
+		 *
+		 * @param Plugin  $plugin
+		 * @param Context $context
+		 */
+		Hooks::action( $context, 'booted', $instance, $context );
+
 		return $instance;
 	}
 
@@ -115,6 +125,15 @@ class Plugin {
 	private function __construct( Context $context ) {
 		$this->context = $context;
 
+		/**
+		 * Filter the capability required for every guide screen and handler.
+		 * Hook it before this instance boots (at file load is fine).
+		 *
+		 * @param string  $capability Default from the `capability` boot arg ('manage_options').
+		 * @param Context $context
+		 */
+		$context->capability = (string) Hooks::filter( $context, 'capability', $context->capability, $context );
+
 		// Register the guide CPT, then run one-time legacy post_type
 		// migration ({prefix}_guide_page → {prefix}_guide). The migration
 		// marker option short-circuits subsequent boots.
@@ -140,6 +159,30 @@ class Plugin {
 		// config leaves the feature completely inert.
 		if ( isset( $context->raw_args['compare'] ) && is_array( $context->raw_args['compare'] ) ) {
 			$this->compare = new Compare( $context, $context->raw_args['compare'] );
+		}
+
+		// Public trigger — see regenerate().
+		add_action( Hooks::NS . '/regenerate', array( $this, 'handle_regenerate_action' ) );
+	}
+
+	/**
+	 * Rebuild this instance's snapshots now.
+	 *
+	 * Snapshots are what the Viewer shows; they only change when something
+	 * calls this (the builder does after each edit). Extensions whose
+	 * placeholders read live data call it when that data changes:
+	 *
+	 *     do_action( 'admin_guide_builder/regenerate' );          // every instance
+	 *     do_action( 'admin_guide_builder/regenerate', 'myplugin' ); // one instance
+	 */
+	public function regenerate() {
+		$this->generator->generate();
+	}
+
+	/** @internal Listener for the `admin_guide_builder/regenerate` action. */
+	public function handle_regenerate_action( $prefix = '' ) {
+		if ( '' === (string) $prefix || Context::sanitize_prefix( $prefix ) === $this->context->prefix ) {
+			$this->regenerate();
 		}
 	}
 

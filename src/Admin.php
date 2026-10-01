@@ -32,6 +32,9 @@ class Admin {
 	/** @var string Builder page slug. */
 	private $page_slug;
 
+	/** @var array|null Normalised extension screens, see get_screens(). */
+	private $screens;
+
 	public function __construct(
 		Context $context,
 		Config $config,
@@ -106,23 +109,50 @@ class Admin {
 			remove_submenu_page( $parent, $this->context->page_slug( 'instructions' ) );
 			remove_submenu_page( $parent, $this->context->page_slug( 'settings' ) );
 		}
+
+		foreach ( $this->get_screens() as $slug => $screen ) {
+			add_submenu_page(
+				$parent,
+				$screen['title'],
+				$screen['menu_title'],
+				$screen['capability'],
+				$screen['page'],
+				function () use ( $slug ) {
+					$this->render_screen( $slug );
+				}
+			);
+			// Builder-nav and hidden screens stay routable but out of the
+			// sidebar, same as the builder pages under menu.builder = false.
+			if ( 'menu' !== $screen['nav'] ) {
+				remove_submenu_page( $parent, $screen['page'] );
+			}
+		}
 	}
 
 	/**
 	 * Get the internal tab nav for builder sub-pages.
 	 */
 	private function get_builder_tabs() {
-		return array(
+		$tabs = array(
 			$this->page_slug                            => 'Builder',
 			$this->context->page_slug( 'instructions' ) => 'Instructions',
 			$this->context->page_slug( 'settings' )     => 'Settings & Tools',
 		);
+		foreach ( $this->get_screens() as $screen ) {
+			if ( 'builder' === $screen['nav'] && current_user_can( $screen['capability'] ) ) {
+				$tabs[ $screen['page'] ] = $screen['menu_title'];
+			}
+		}
+		return $tabs;
 	}
 
 	/**
 	 * Render the in-page tab navigation below the page title.
+	 *
+	 * Public so a 'builder'-nav extension screen can print the same nav:
+	 * Plugin::get( $prefix )->admin->render_builder_nav( $context->page_slug( 'my-screen' ) ).
 	 */
-	private function render_builder_nav( $current_slug ) {
+	public function render_builder_nav( $current_slug ) {
 		$tabs = $this->get_builder_tabs();
 		echo '<nav class="nav-tab-wrapper" style="margin-bottom:20px">';
 		foreach ( $tabs as $slug => $label ) {
@@ -180,6 +210,8 @@ class Admin {
 			array(),
 			$ver
 		);
+
+		Hooks::action( $this->context, 'enqueue_assets', 'builder', $this->context );
 
 		?>
 		<div class="wrap nav-menus-php">
@@ -322,6 +354,8 @@ class Admin {
 			$ver
 		);
 
+		Hooks::action( $this->context, 'enqueue_assets', 'editor', $this->context );
+
 		// Transform {{tokens}} to visual pills.
 		$editor_content = preg_replace(
 			'/\{\{([a-z_]+)\}\}/',
@@ -424,6 +458,7 @@ class Admin {
 		}
 
 		wp_update_post( $update );
+		$this->config->changed( 'template', array( 'slug' => $new_slug ?: $old_slug, 'post_id' => $post_id ) );
 		$this->generator->generate();
 
 		wp_safe_redirect( admin_url( 'admin.php?page=' . $this->page_slug . '&edit=' . $post_id . '&updated=1' ) );
@@ -627,6 +662,8 @@ class Admin {
 			array(),
 			$ver
 		);
+
+		Hooks::action( $this->context, 'enqueue_assets', 'instructions', $this->context );
 
 		$integrations = $this->integrations->get_all();
 
@@ -863,6 +900,8 @@ class Admin {
 			$ver
 		);
 
+		Hooks::action( $this->context, 'enqueue_assets', 'settings', $this->context );
+
 		$export_url = wp_nonce_url(
 			admin_url( 'admin-post.php?action=' . $this->context->action_name( 'export' ) ),
 			$this->context->nonce_action()
@@ -936,8 +975,87 @@ class Admin {
 					</table>
 				</div>
 
+				<?php
+				/**
+				 * Fires at the end of Settings & Tools, for extensions to print
+				 * their own cards. Save through your own admin-post handler.
+				 *
+				 * @param Context $context
+				 */
+				Hooks::action( $this->context, 'settings_sections', $this->context );
+				?>
+
 			</div>
 		</div>
 		<?php
+	}
+
+	// ── Extension screens ───────────────────────────────────────────────
+
+	/**
+	 * Admin screens contributed by extensions, normalised.
+	 *
+	 * Extensions add screens through the `screens` filter instead of calling
+	 * add_submenu_page() themselves, so they land under the same parent, share
+	 * the capability, and can appear as a tab in the builder nav.
+	 *
+	 *     add_filter( 'admin_guide_builder/screens', function ( $screens, $context ) {
+	 *         $screens['compare'] = array(
+	 *             'title'    => 'Site Compare',
+	 *             'callback' => 'my_render_compare',
+	 *             'nav'      => 'hidden', // reach it from a viewer_actions button
+	 *         );
+	 *         return $screens;
+	 *     }, 10, 2 );
+	 *
+	 * The screen's URL is admin.php?page={prefix}-admin-guide-{key}.
+	 *
+	 * @return array<string,array{title:string,callback:callable,capability:string,nav:string,page:string}>
+	 */
+	public function get_screens() {
+		if ( null !== $this->screens ) {
+			return $this->screens;
+		}
+
+		/**
+		 * Filter extension admin screens.
+		 *
+		 * @param array<string,array> $screens Keyed by screen slug. Keys per screen:
+		 *     title (string, required), callback (callable, required),
+		 *     menu_title (string), capability (string, default: instance capability),
+		 *     nav ('menu' = own submenu item, 'builder' = tab in the builder nav,
+		 *          'hidden' = routable only; default 'menu').
+		 * @param Context $context
+		 */
+		$raw = (array) Hooks::filter( $this->context, 'screens', array(), $this->context );
+
+		$reserved      = array( 'builder', 'instructions', 'settings', 'viewer' );
+		$this->screens = array();
+		foreach ( $raw as $slug => $screen ) {
+			$slug = sanitize_key( $slug );
+			if ( '' === $slug || in_array( $slug, $reserved, true ) || empty( $screen['title'] ) || empty( $screen['callback'] ) || ! is_callable( $screen['callback'] ) ) {
+				continue;
+			}
+			$nav = isset( $screen['nav'] ) && in_array( $screen['nav'], array( 'menu', 'builder', 'hidden' ), true ) ? $screen['nav'] : 'menu';
+			$this->screens[ $slug ] = array(
+				'title'      => (string) $screen['title'],
+				'menu_title' => isset( $screen['menu_title'] ) ? (string) $screen['menu_title'] : (string) $screen['title'],
+				'callback'   => $screen['callback'],
+				'capability' => ! empty( $screen['capability'] ) ? (string) $screen['capability'] : $this->context->capability,
+				'nav'        => $nav,
+				'page'       => $this->context->page_slug( $slug ),
+			);
+		}
+		return $this->screens;
+	}
+
+	/** Render callback for an extension screen — enqueue hook first, then delegate. */
+	private function render_screen( $slug ) {
+		$screens = $this->get_screens();
+		if ( ! isset( $screens[ $slug ] ) ) {
+			return;
+		}
+		Hooks::action( $this->context, 'enqueue_assets', $slug, $this->context );
+		call_user_func( $screens[ $slug ]['callback'], $this->context );
 	}
 }

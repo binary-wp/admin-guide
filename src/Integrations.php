@@ -307,8 +307,7 @@ class Integrations {
 		/**
 		 * Filter system tab options.
 		 */
-		$groups = apply_filters( 'guide_builder/system_tabs', $groups, $existing );
-		$groups = apply_filters( $this->context->prefix . '/guide_builder/system_tabs', $groups, $existing );
+		$groups = Hooks::filter( $this->context, 'system_tabs', $groups, $existing );
 		return $groups;
 	}
 
@@ -416,8 +415,7 @@ class Integrations {
 		 * Fires after JSON integrations are loaded.
 		 * External code can register additional integrations here.
 		 */
-		do_action( 'guide_builder/integrations', $this );
-		do_action( $this->context->prefix . '/guide_builder/integrations', $this );
+		Hooks::action( $this->context, 'integrations', $this );
 	}
 
 	// ── Requires Resolution ─────────────────────────────────────────────
